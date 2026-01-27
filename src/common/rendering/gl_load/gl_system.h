@@ -44,7 +44,12 @@
 #include "gl_load/gl_load.h"
 
 #if defined(__APPLE__)
-	#include <OpenGL/OpenGL.h>
+// GenZD Custom
+#import "TargetConditionals.h"
+#if TARGET_OS_IPHONE
+#else
+#include <OpenGL/OpenGL.h>
+#endif
 #endif
 
 

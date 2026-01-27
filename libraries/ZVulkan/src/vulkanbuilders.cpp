@@ -5,6 +5,11 @@
 #include "glslang/glslang/Public/ShaderLang.h"
 #include "glslang/spirv/GlslangToSpv.h"
 
+// GenZD Custom
+#if defined(__APPLE__)
+#import "TargetConditionals.h"
+#endif
+
 static const TBuiltInResource DefaultTBuiltInResource = {
 	/* .MaxLights = */ 32,
 	/* .MaxClipPlanes = */ 6,
@@ -1830,11 +1835,13 @@ std::vector<VulkanCompatibleDevice> VulkanDeviceBuilder::FindDevices(const std::
 			continue;
 
 		// Check if all required features are there
+#if !defined(TARGET_OS_IPHONE)
 		if (info.Features.Features.samplerAnisotropy != VK_TRUE ||
 			info.Features.Features.fragmentStoresAndAtomics != VK_TRUE ||
 			info.Features.Features.multiDrawIndirect != VK_TRUE ||
 			info.Features.Features.independentBlend != VK_TRUE)
 			continue;
+#endif
 
 		VulkanCompatibleDevice dev;
 		dev.Device = &instance->PhysicalDevices[idx];

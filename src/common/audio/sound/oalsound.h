@@ -34,10 +34,18 @@
 #include "i_sound.h"
 #include "s_soundinternal.h"
 
+// GenZD Custom
+#ifdef __APPLE__
+#import "TargetConditionals.h"
+#endif
+
 #ifndef NO_OPENAL
 
 #ifdef DYN_OPENAL
 #define AL_NO_PROTOTYPES
+#include "thirdparty/al.h"
+#include "thirdparty/alc.h"
+#elif TARGET_OS_IPHONE
 #include "thirdparty/al.h"
 #include "thirdparty/alc.h"
 #else

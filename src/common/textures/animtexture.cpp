@@ -25,8 +25,16 @@
 #include "bitmap.h"
 #include "texturemanager.h"
 
-#include "vpx/vpx_image.h"
+// GenZD custom
+#if defined(__APPLE__)
+#import "TargetConditionals.h"
+#endif
 
+#if TARGET_OS_IPHONE
+#include <VPX/vpx/vpx_image.h>
+#else
+#include "vpx/vpx_image.h"
+#endif
 
 //==========================================================================
 //

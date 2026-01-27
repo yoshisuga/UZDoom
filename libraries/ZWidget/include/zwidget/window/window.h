@@ -1,5 +1,12 @@
 #pragma once
 
+#if defined(__APPLE__)
+#import "TargetConditionals.h"
+#if TARGET_OS_IPHONE
+#include <cstdint>
+#endif
+#endif
+
 #include <memory>
 #include <string>
 #include <functional>

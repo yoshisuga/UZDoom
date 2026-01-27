@@ -37,10 +37,27 @@
 #include "sndfile_decoder.h"
 #include "mpg123_decoder.h"
 
+#if defined(__APPLE__)
+#import "TargetConditionals.h"
+#endif
+#if TARGET_OS_IPHONE
+#include "stb_vorbis_decoder.h"
+#endif
+
 SoundDecoder *SoundDecoder::CreateDecoder(MusicIO::FileInterface *reader)
 {
     SoundDecoder *decoder = NULL;
     auto pos = reader->tell();
+
+#if TARGET_OS_IPHONE		
+    // Try stb_vorbis first for OGG files (more reliable than libsndfile's vorbis on some platforms)
+    decoder = new StbVorbisDecoder;
+    if (decoder->open(reader))
+        return decoder;
+    reader->seek(pos, SEEK_SET);
+    delete decoder;
+    decoder = NULL;
+#endif		
 
 #ifdef HAVE_SNDFILE
 		decoder = new SndFileDecoder;

@@ -22,8 +22,8 @@
 **
 */
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_events.h>
+#include <SDL.h>
+#include <SDL_events.h>
 
 #include "c_buttons.h"
 #include "c_console.h"
@@ -39,6 +39,12 @@
 #include "utf8.h"
 #include "v_video.h"
 #include "version.h"
+
+// GenZD Custom
+#include <wchar.h>
+#if TARGET_OS_IPHONE
+#include "ios/ios-input-hook.h"
+#endif
 
 bool GUICapture;
 static bool NativeMouse = true;
@@ -231,6 +237,9 @@ static void I_CheckGUICapture ()
 	if (wantCapt != GUICapture)
 	{
 		GUICapture = wantCapt;
+#if TARGET_OS_IPHONE
+    InputUpdateGUICapture(GUICapture);
+#endif		
 		if (wantCapt)
 		{
 			buttonMap.ResetButtonStates();
@@ -254,6 +263,11 @@ static void MouseRead ()
 {
 	int x, y;
 
+#if TARGET_OS_IPHONE
+	int iosX, iosY;
+  int gyroX, gyroY;
+#endif	
+
 	if (NativeMouse)
 	{
 		return;
@@ -261,9 +275,27 @@ static void MouseRead ()
 
 	SDL_GetRelativeMouseState (&x, &y);
 
+#if TARGET_OS_IPHONE
+  int adjustedX = int(x * 1.0 * IOS_GetAimSensitivity());
+  int adjustedY = int(y * 1.0 * IOS_GetAimSensitivity());
+  PostMouseMove (adjustedX, adjustedY);
+//  printf("yoshi debug mouse: SDL relative x = %i, y = %i\n",x,y);
+
+  IOS_GetMouseDeltas(&iosX, &iosY);
+//  printf("yoshi debug mouse: MouseInputHolder x = %i, y = %i\n",iosX,iosY);
+
+	PostMouseMove (iosX, iosY);
+
+  IOS_GetGyroDeltas(&gyroX, &gyroY);
+//  printf("yoshi debug mouse: Gyro x = %i, y = %i\n",gyroX,gyroY);
+
+  PostMouseMove (gyroX, gyroY);
+#else	
+
 	if (joykey_stop_conflict > 0) return;
 
 	PostMouseMove (x, y);
+#endif
 }
 
 static void I_CheckNativeMouse ()
@@ -579,6 +611,57 @@ void MessagePump (const SDL_Event &sev)
 				event.data1 = toupper(event.data1);
 				D_PostEvent (&event);
 			}
+
+#if TARGET_OS_IPHONE
+      if (event.subtype != EV_GUI_KeyUp && !(kmod & KMOD_CTRL)) {
+        event.subtype = EV_GUI_Char;
+        int16_t ascii = IOS_GetAsciiFromSDLKeyCode(sev.key.keysym.sym);
+        if (ascii != 0) {
+          wchar_t realchar = (wchar_t)ascii;
+          if (kmod & KMOD_SHIFT) {
+            if (ascii == '-') {
+              realchar = '_';
+            } else if (ascii == '\'') {
+              realchar = '"';
+            } else if (ascii == '=') {
+              realchar = '+';
+            } else if (ascii == ';') {
+              realchar = ':';
+            } else if (ascii == '1') {
+              realchar = '!';
+            } else if (ascii == '2') {
+              realchar = '@';
+            } else if (ascii == '3') {
+              realchar = '#';
+            } else if (ascii == '4') {
+              realchar = '$';
+            } else if (ascii == '5') {
+              realchar = '%';
+            } else if (ascii == '6') {
+              realchar = '^';
+            } else if (ascii == '7') {
+              realchar = '&';
+            } else if (ascii == '8') {
+              realchar = '*';
+            } else if (ascii == '9') {
+              realchar = '(';
+            } else if (ascii == '0') {
+              realchar = ')';
+            } else if (ascii == ',') {
+              realchar = '<';
+            } else if (ascii == '.') {
+              realchar = '>';
+            } else if (ascii == '/') {
+              realchar = '?';
+            } else {
+              realchar = (wchar_t) toupper(ascii);
+            }
+          }
+          event.data1 = realchar;
+          D_PostEvent (&event);
+        }
+      }
+#endif						
 		}
 		break;
 
@@ -689,4 +772,7 @@ void I_ProcessJoysticks ();
 void I_StartFrame ()
 {
 	I_ProcessJoysticks();
+#if TARGET_OS_IPHONE
+	IOS_HandleInput();
+#endif		
 }

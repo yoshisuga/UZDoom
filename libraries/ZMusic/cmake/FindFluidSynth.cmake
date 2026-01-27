@@ -25,7 +25,12 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(FluidSynth DEFAULT_MSG FLUIDSYNTH_LIBRARY FLUIDSYNTH_INCLUDE_DIR)
 
 if(FLUIDSYNTH_FOUND)
-	add_library(libfluidsynth UNKNOWN IMPORTED)
+	# Use STATIC for .a files, SHARED for .dylib/.so
+	if(FLUIDSYNTH_LIBRARY MATCHES "\\.(a|lib)$")
+		add_library(libfluidsynth STATIC IMPORTED GLOBAL)
+	else()
+		add_library(libfluidsynth SHARED IMPORTED GLOBAL)
+	endif()
 	set_target_properties(libfluidsynth
 	PROPERTIES
 		IMPORTED_LOCATION "${FLUIDSYNTH_LIBRARY}"

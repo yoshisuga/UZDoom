@@ -299,7 +299,7 @@ if( NOT MSVC )
 	add_definitions( -D__forceinline=inline )
 endif()
 
-if( UNIX )
+if( UNIX AND NOT (IOS OR CMAKE_SYSTEM_NAME STREQUAL "iOS"))
 	CHECK_LIBRARY_EXISTS( rt clock_gettime "" CLOCK_GETTIME_IN_RT )
 	if( NOT CLOCK_GETTIME_IN_RT )
 		CHECK_FUNCTION_EXISTS( clock_gettime CLOCK_GETTIME_EXISTS )
@@ -361,7 +361,7 @@ if( VPX_FOUND )
 	add_definitions( "-DUSE_LIBVPX=1" )
 	include_directories( SYSTEM "${VPX_INCLUDE_DIR}" )
 	set( PROJECT_LIBRARIES ${PROJECT_LIBRARIES} ${VPX_LIBRARIES} )
-else()
+elseif(NOT (IOS OR CMAKE_SYSTEM_NAME STREQUAL "iOS"))
 	message( SEND_ERROR "Could not find libvpx" )
 endif()
 
@@ -1301,6 +1301,9 @@ if( UNIX )
 	endif()
 endif()
 
+# Note: For iOS, ZMusic is now built from source (not as a framework)
+# so ZMUSIC_LIBRARIES should not be cleared
+
 target_link_libraries( zdoom ${PROJECT_LIBRARIES} lzma ${ZMUSIC_LIBRARIES} )
 include_directories(
 	BEFORE
@@ -1511,6 +1514,10 @@ if ( NOT ZMUSIC_SYSTEM_INSTALL )
 			COMPONENT "Game executable"
 		)
 	endif()
+endif()
+
+if(IOS OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    include(${CMAKE_SOURCE_DIR}/src/ios/genzd_target_config.cmake OPTIONAL)
 endif()
 
 if( WIN32 )

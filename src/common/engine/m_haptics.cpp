@@ -372,7 +372,8 @@ void Joy_ResetRumbleMapping()
 	Haptics.current.high_frequency = Haptics.current.low_frequency =
 	Haptics.current.left_trigger = Haptics.current.right_trigger =
 	Haptics.current.ticks = 0;
-	I_Rumble(0, 0, 0, 0);
+	// Yoshi tmp disable
+//	I_Rumble(0, 0, 0, 0);
 }
 
 //==========================================================================

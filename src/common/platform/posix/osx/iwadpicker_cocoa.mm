@@ -21,6 +21,8 @@
 **
 */
 
+#import "TargetConditionals.h"
+
 #include "cmdlib.h"
 #include "version.h"
 #include "c_cvars.h"
@@ -28,6 +30,17 @@
 #include "gameconfigfile.h"
 #include "engineerrors.h"
 #include "i_interface.h"
+
+// GenZD Custom
+#if TARGET_OS_IPHONE
+
+int I_PickIWad_Cocoa (WadStuff *wads, int numwads, bool showwin, int defaultiwad)
+{
+    printf("yoshi: I_PickIWad_Cocoa: no implementation yet!");
+    return 0;
+}
+
+#else
 
 #include <Cocoa/Cocoa.h>
 #include <wordexp.h>
@@ -445,3 +458,5 @@ int I_PickIWad_Cocoa (WadStuff *wads, int numwads, bool showwin, int defaultiwad
 
 	return ret;
 }
+
+#endif

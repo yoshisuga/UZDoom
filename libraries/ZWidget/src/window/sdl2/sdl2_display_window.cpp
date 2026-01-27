@@ -1,6 +1,6 @@
 #include "sdl2_display_window.h"
 #include <stdexcept>
-#include <SDL2/SDL_vulkan.h>
+#include <SDL_vulkan.h>
 
 Uint32 SDL2DisplayWindow::PaintEventNumber = 0xffffffff;
 bool SDL2DisplayWindow::ExitRunLoop;
@@ -516,8 +516,8 @@ void SDL2DisplayWindow::OnWindowEvent(const SDL_WindowEvent& event)
 		case SDL_WINDOWEVENT_LEAVE:
 		case SDL_WINDOWEVENT_TAKE_FOCUS:
 		case SDL_WINDOWEVENT_HIT_TEST:
-		case SDL_WINDOWEVENT_ICCPROF_CHANGED:
-		case SDL_WINDOWEVENT_DISPLAY_CHANGED:
+//		case SDL_WINDOWEVENT_ICCPROF_CHANGED:
+//		case SDL_WINDOWEVENT_DISPLAY_CHANGED:
 			// nope
 			break;
 	}

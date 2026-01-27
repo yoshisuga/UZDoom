@@ -20,8 +20,18 @@
 **---------------------------------------------------------------------------
 **
 */
+
+// GenZD custom
+#if defined(__APPLE__)
+#import "TargetConditionals.h"
+#endif
+
 #include "webp/decode.h"
+#if TARGET_OS_IPHONE
+#include "webpmux/mux.h"
+#else
 #include "webp/mux.h"
+#endif
 
 #include "files.h"
 #include "filesystem.h"

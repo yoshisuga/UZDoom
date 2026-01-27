@@ -21,8 +21,8 @@
 **
 */
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_gamecontroller.h>
+#include <SDL.h>
+#include <SDL_gamecontroller.h>
 #include <cstdint>
 #include <cstdlib>
 
@@ -31,6 +31,11 @@
 #include "d_eventbase.h"
 #include "i_input.h"
 #include "m_joy.h"
+
+// GenZD Custom
+#if TARGET_OS_IPHONE
+#include "ios/ios-input-hook.h"
+#endif
 
 static const EAxisCodes ControllerAxisCodes[][2] =
 {
@@ -71,7 +76,14 @@ public:
 			{
 				NumAxes = SDL_CONTROLLER_AXIS_MAX;
 				NumHats = 0;
+				
+				// SDL_GameControllerHasRumble and SDL_GameControllerHasRumbleTriggers were added in SDL 2.0.18
+#if SDL_VERSION_ATLEAST(2, 0, 18)
 				Haptics = SDL_GameControllerHasRumble(Mapping) | SDL_GameControllerHasRumbleTriggers(Mapping) << 1;
+#else
+				// Fallback: assume basic rumble support but no trigger rumble
+				Haptics = HAPTICS;
+#endif
 
 				SetDefaultConfig();
 			}
@@ -244,6 +256,7 @@ public:
 
 	void Rumble(float high_freq, float low_freq, float left_trig, float right_trig)
 	{
+#if SDL_VERSION_ATLEAST(2, 0, 9)
 		uint16_t duration_ms = -1; // turn on for max time (we'll turn it off later ourselves)
 
 		if (Haptics & HAPTICS)
@@ -255,6 +268,7 @@ public:
 				duration_ms);
 		}
 
+#if SDL_VERSION_ATLEAST(2, 0, 14)
 		if (Haptics & HAPTICS_TRIGGERS)
 		{
 			SDL_GameControllerRumbleTriggers(
@@ -263,6 +277,8 @@ public:
 				static_cast<uint16_t> (0xffff * clamp(right_trig*HapticsStrength, 0.f, 1.f)),
 				duration_ms);
 		}
+#endif
+#endif
 	}
 
 	void SetDefaultConfig()
@@ -696,6 +712,10 @@ void I_GetAxes(float axes[NUM_AXIS_CODES])
 		axes[i] = 0.0f;
 	}
 
+#if TARGET_OS_IPHONE	
+	  IOS_HandleJoystickAxes(axes);
+#endif		
+
 	if (use_joystick && JoystickManager)
 	{
 		JoystickManager->AddAxes(axes);
@@ -704,6 +724,7 @@ void I_GetAxes(float axes[NUM_AXIS_CODES])
 
 void I_Rumble(double high_freq, double low_freq, double left_trig, double right_trig)
 {
+//	return;
 	if (!use_joystick) return;
 
 	JoystickManager->Rumble(high_freq, low_freq, left_trig, right_trig);

@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include <zwidget/window/window.h>
 #include <zwidget/window/sdl2nativehandle.h>
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 class SDL2DisplayWindow : public DisplayWindow
 {

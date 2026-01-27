@@ -90,6 +90,15 @@ const char* neterror(void);
 #define neterror() strerror(errno)
 #endif
 
+// GenZD custom
+#if defined(__APPLE__)
+#import "TargetConditionals.h"
+#endif
+
+#if TARGET_OS_IPHONE
+#include "ios/ios-input-hook.h"
+#endif
+
 FARG(host, "Multiplayer", "Designates the machine as the host for a multiplayer game.", "x",
 	"This machine will function as a host for a multiplayer game with x players (including this"
 	" machine). It will wait for other machines to connect using the -join. parameter and then"
@@ -945,6 +954,10 @@ static bool HostGame(int arg)
 	I_NetInit("Waiting for other players...", true);
 	I_NetUpdatePlayers(1, MaxClients);
 	I_NetClientConnected(0u, 16u);
+
+#if TARGET_OS_IPHONE
+  IOS_StartBonjourService();
+#endif
 
 	// Wait for the lobby to be full.
 	int connectedPlayers = 1;

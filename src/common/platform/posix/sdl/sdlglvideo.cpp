@@ -57,8 +57,17 @@
 // MACROS ------------------------------------------------------------------
 
 #if defined HAVE_VULKAN
-#include <SDL2/SDL_vulkan.h>
+#include <SDL_vulkan.h>
 #endif // HAVE_VULKAN
+
+// GenZD Custom
+#if defined(__APPLE__)
+#import "TargetConditionals.h"
+#if TARGET_OS_IPHONE
+#include "ios/ios-glue.h"
+#include "video-hook.h"
+#endif
+#endif
 
 // TYPES -------------------------------------------------------------------
 
@@ -143,7 +152,9 @@ namespace Priv
 
 	void CreateWindow(uint32_t extraFlags)
 	{
+#if !defined(TARGET_OS_IPHONE)
 		assert(Priv::window == nullptr);
+#endif
 
 		// Get displays and default display size
 		updateDisplayInfo();
@@ -165,7 +176,28 @@ namespace Priv
 		caption.Format(GAMENAME " %s (%s)", GetVersionString(), GetGitTime());
 
 		const uint32_t windowFlags = (win_maximized ? SDL_WINDOW_MAXIMIZED : 0) | SDL_WINDOW_RESIZABLE | extraFlags;
+
+
+#if TARGET_OS_IPHONE
+        int width, height;
+        ios_get_screen_width_height(&width, &height);
+//        SDL_Vulkan_LoadLibrary("libMoltenVK.dylib");
+        SDL_Vulkan_LoadLibrary(NULL);
+        const char *errorv = SDL_GetError();
+        printf("SDL_CreateWindow error = %s",errorv);
+
+    // GenZD Custom: tvOS to not use high dpi for performance and do 1080p
+#if TARGET_OS_TV
+    Priv::window = SDL_CreateWindow(caption.GetChars(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN | SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS | SDL_WINDOW_BORDERLESS | SDL_WINDOW_VULKAN);
+#else
+    Priv::window = SDL_CreateWindow(caption.GetChars(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN | SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_BORDERLESS | SDL_WINDOW_VULKAN);
+#endif
+
+        const char *error = SDL_GetError();
+        printf("SDL_CreateWindow error = %s",error);
+#else		
 		Priv::window = SDL_CreateWindow(caption.GetChars(), xWindowPos, yWindowPos, win_w, win_h, windowFlags);
+#endif		
 
 		if (Priv::window != nullptr)
 		{
@@ -318,7 +350,13 @@ bool I_CreateVulkanSurface(VkInstance instance, VkSurfaceKHR *surface)
 {
 	assert(Priv::vulkanEnabled);
 	assert(Priv::window != nullptr);
+#if TARGET_OS_IPHONE
+    bool createdSurface = SDL_Vulkan_CreateSurface(Priv::window, instance, surface) == SDL_TRUE;
+    SDLWindowAfterSurfaceCreate(Priv::window);
+    return createdSurface;
+#else	
 	return SDL_Vulkan_CreateSurface(Priv::window, instance, surface) == SDL_TRUE;
+#endif
 }
 #endif
 
@@ -338,7 +376,11 @@ SDLVideo::SDLVideo ()
 	}
 
 #ifdef HAVE_VULKAN
+#if TARGET_OS_IPHONE
+  Priv::vulkanEnabled = true;
+#else
 	Priv::vulkanEnabled = V_GetBackend() == 1;
+#endif
 
 	if (Priv::vulkanEnabled)
 	{
@@ -478,6 +520,11 @@ void SystemBaseFrameBuffer::ToggleFullscreen(bool yes)
 {
 	SDL_ShowWindow(Priv::window);
 	SDL_SetWindowFullscreen(Priv::window, yes ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+
+	#if TARGET_OS_IPHONE
+  SDLWindowAfterCreate(Priv::window);
+#endif
+
 	if ( !yes )
 	{
 		if ( !Priv::fullscreenSwitch )
@@ -609,7 +656,8 @@ int SystemGLFrameBuffer::GetClientHeight()
 
 void SystemGLFrameBuffer::SetVSync( bool vsync )
 {
-#if defined (__APPLE__)
+// GenZD Custom: for iOS use the default implementation - hope it works!
+#if defined (__APPLE__) && !defined(TARGET_OS_IPHONE)
 	const GLint value = vsync ? 1 : 0;
 	CGLSetParameter( CGLGetCurrentContext(), kCGLCPSwapInterval, &value );
 #else

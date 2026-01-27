@@ -46,7 +46,7 @@
 #include <termios.h>
 #endif
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 #include "c_cvars.h"
 #include "cmdlib.h"
@@ -61,6 +61,7 @@
 #include "version.h"
 
 #if defined(__APPLE__)
+#import "TargetConditionals.h"
 int I_PickIWad_Cocoa (WadStuff *wads, int numwads, bool showwin, int defaultiwad);
 #endif
 
@@ -348,13 +349,21 @@ FString I_GetFromClipboard (bool use_primary_selection)
 
 FString I_GetCWD()
 {
+#if TARGET_OS_IPHONE
+  char curdir[256];
+  getcwd(curdir, 256);
+#else
 	char* curdir = getcwd(NULL,0);
+#endif
+
 	if (!curdir) 
 	{
 		return "";
 	}
 	FString ret(curdir);
+#if !defined(TARGET_OS_IPHONE)	
 	free(curdir);
+#endif	
 	return ret;
 }
 
@@ -387,10 +396,18 @@ unsigned int I_MakeRNGSeed()
 
 void I_OpenShellFolder(const char* infolder)
 {
-	char* curdir = getcwd(NULL,0);
+#if TARGET_OS_IPHONE
+  char curdir[256];
+  getcwd(curdir, 256);
+#else
+  char* curdir = getcwd(NULL,0);
+#endif
 
 	if (!chdir(infolder))
 	{
+#if TARGET_OS_IPHONE
+    printf("Opening folder: %s\n", infolder);
+#else
 		if (longsavemessages)
 			Printf("Opening folder: %s\n", infolder);
 
@@ -399,16 +416,23 @@ void I_OpenShellFolder(const char* infolder)
 #else
 		std::system("xdg-open .");
 #endif
+#endif				// if #TARGET_OS_IPHONE
 
 		chdir(curdir);
 	}
 	else
 	{
+#if TARGET_OS_IPHONE
+    printf("Unable to open directory '%s\n", infolder);
+#else		
 		if (longsavemessages)
 			Printf("Unable to open directory '%s\n", infolder);
 		else
 			Printf("Unable to open requested directory\n");
+#endif
 	}
+#if !defined(TARGET_OS_IPHONE)	
 	free(curdir);
+#endif	
 }
 

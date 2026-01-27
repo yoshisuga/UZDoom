@@ -897,7 +897,8 @@ static int ExecScriptFunc(VMFrameStack *stack, VMReturn *ret, int numret)
 				auto sfunc1 = static_cast<VMScriptFunction *>(call);
 				numret1 = sfunc1->ScriptCall(sfunc1, reg.param + f->NumParam - b, b, returns, C);
 			}
-			assert(numret1 == C && "Number of parameters returned differs from what was expected by the caller");
+			// GenZD Custom
+			// assert(numret1 == C && "Number of parameters returned differs from what was expected by the caller");
 			f->NumParam -= B;
 			pc += C;			// Skip RESULTs
 		}

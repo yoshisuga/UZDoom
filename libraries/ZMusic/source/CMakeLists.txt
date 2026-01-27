@@ -35,6 +35,7 @@ INTERFACE
 	decoder/sounddecoder.cpp
 	decoder/sndfile_decoder.cpp
 	decoder/mpg123_decoder.cpp
+	decoder/stb_vorbis_decoder.cpp
 	zmusic/configuration.cpp
 	zmusic/zmusic.cpp
 	zmusic/critsec.cpp
@@ -102,6 +103,13 @@ elseif(NOT ("vcpkg-libsndfile" IN_LIST VCPKG_MANIFEST_FEATURES))
 	endif()
 endif()
 
+# FluidSynth - include directories (option and find_package are in thirdparty/CMakeLists.txt)
+if(FLUIDSYNTH_FOUND)
+	target_include_directories(zmusic-obj INTERFACE ${FLUIDSYNTH_INCLUDE_DIR})
+else()
+	target_include_directories(zmusic-obj INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/fluidsynth/include)
+endif()
+
 # System MIDI support
 if(WIN32)
 	target_compile_definitions(zmusic-obj INTERFACE HAVE_SYSTEM_MIDI)
@@ -153,8 +161,15 @@ use_fast_math(zmusiclite)
 target_include_directories(zmusic INTERFACE $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${ZMusic_SOURCE_DIR}/include>)
 target_include_directories(zmusiclite INTERFACE $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${ZMusic_SOURCE_DIR}/include>)
 
-target_link_libraries_hidden(zmusic zmusic-obj adl oplsynth opn timidity timidityplus wildmidi fluidsynth)
-target_link_libraries_hidden(zmusiclite zmusic-obj fluidsynth)
+# Use external FluidSynth (libfluidsynth) if found, otherwise internal (fluidsynth)
+if(FLUIDSYNTH_FOUND)
+	set(FLUIDSYNTH_TARGET libfluidsynth)
+else()
+	set(FLUIDSYNTH_TARGET fluidsynth)
+endif()
+
+target_link_libraries_hidden(zmusic zmusic-obj adl oplsynth opn timidity timidityplus wildmidi ${FLUIDSYNTH_TARGET})
+target_link_libraries_hidden(zmusiclite zmusic-obj ${FLUIDSYNTH_TARGET})
 
 target_compile_definitions(zmusic PUBLIC $<$<STREQUAL:$<TARGET_PROPERTY:zmusic,TYPE>,STATIC_LIBRARY>:ZMUSIC_STATIC>)
 target_compile_definitions(zmusiclite PRIVATE ZMUSIC_LITE=1 PUBLIC $<$<STREQUAL:$<TARGET_PROPERTY:zmusiclite,TYPE>,STATIC_LIBRARY>:ZMUSIC_STATIC>)

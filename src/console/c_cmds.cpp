@@ -61,6 +61,12 @@
 #include "d_main.h"
 #include "savegamemanager.h"
 
+// GenZD custom
+#if defined(__APPLE__)
+#import "TargetConditionals.h"
+#endif
+
+
 extern FILE *Logfile;
 extern bool insave;
 
@@ -74,6 +80,9 @@ CVAR(Bool, show_obituaries, true, CVAR_ARCHIVE)
 
 bool CheckCheatmode (bool printmsg, bool sponly)
 {
+#if TARGET_OS_IPHONE
+	return false;
+#else	
 	if (sponly && netgame)
 	{
 		if (printmsg) Printf("Not in a singleplayer game.\n");
@@ -93,6 +102,7 @@ bool CheckCheatmode (bool printmsg, bool sponly)
 	{
 		return false;
 	}
+#endif	
 }
 
 /*

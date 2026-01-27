@@ -36,6 +36,14 @@
 
 #define SF_LOG(type, path) DPrintf(DMSG_SPAMMY, "SF." type ": %s\n", path);
 
+// GenZD Custom
+#ifdef __APPLE__
+#import "TargetConditionals.h"
+#endif
+#if TARGET_OS_IPHONE
+#include "ios/ios-glue.h"
+#endif
+
 //==========================================================================
 //
 //
@@ -388,6 +396,50 @@ void FSoundFontManager::ProcessOneFile(const char* fn)
 
 void FSoundFontManager::CollectSoundfonts()
 {
+
+	// GenZD Custom
+  // Always search the Documents/GZDoom directories
+#if TARGET_OS_IPHONE
+  char ios_docs_path[4000];
+  ios_get_base_path(ios_docs_path);
+  FString iosDocs = FString(ios_docs_path);
+
+  FileSys::FileList list;
+  FString dir;
+
+  dir = NicePath((iosDocs + "GZDoom/soundfonts").GetChars());
+  FixPathSeperator(dir);
+  if (dir.IsNotEmpty())
+  {
+    if (FileSys::ScanDirectory(list, dir.GetChars(), "*", true))
+    {
+      for(auto& entry : list)
+      {
+        if (!entry.isDirectory)
+        {
+          ProcessOneFile(entry.FilePath.c_str());
+        }
+      }
+    }
+  }
+
+  dir = NicePath((iosDocs + "GZDoom/fm_banks").GetChars());
+  FixPathSeperator(dir);
+  if (dir.IsNotEmpty())
+  {
+    if (FileSys::ScanDirectory(list, dir.GetChars(), "*", true))
+    {
+      for(auto& entry : list)
+      {
+        if (!entry.isDirectory)
+        {
+          ProcessOneFile(entry.FilePath.c_str());
+        }
+      }
+    }
+  }
+#endif	
+
 	FConfigFile* GameConfig = sysCallbacks.GetConfig ? sysCallbacks.GetConfig() : nullptr;
 	if (GameConfig != NULL && GameConfig->SetSection ("SoundfontSearch.Directories"))
 	{

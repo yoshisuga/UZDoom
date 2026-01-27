@@ -118,7 +118,7 @@ SndFileDecoder::~SndFileDecoder()
 bool SndFileDecoder::open(MusicIO::FileInterface *reader)
 {
 	if (!IsSndFilePresent()) return false;
-	
+
 	SF_VIRTUAL_IO sfio = { file_get_filelen, file_seek, file_read, file_write, file_tell };
 
 	Reader = reader;

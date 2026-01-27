@@ -1,7 +1,7 @@
 #include "sdl2_display_backend.h"
 #include "sdl2_display_window.h"
 #include <stdexcept>
-#include <SDL2/SDL_video.h>
+#include <SDL_video.h>
 #ifndef WIN32
 #include <dlfcn.h>
 #endif
@@ -17,6 +17,8 @@ namespace X11DPI
 SDL2DisplayBackend::SDL2DisplayBackend()
 {
 	int result = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER);
+//	int result = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
+
 	if (result != 0)
 		throw std::runtime_error(std::string("Unable to initialize SDL:") + SDL_GetError());
 

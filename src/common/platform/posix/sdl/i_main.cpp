@@ -24,7 +24,7 @@
 
 // HEADER FILES ------------------------------------------------------------
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include <csignal>
 #include <locale.h>
 #include <new>
@@ -159,6 +159,9 @@ int main (int argc, char **argv)
 	printf(GAMENAME" %s - %s - SDL version\nCompiled on %s\n",
 		GetVersionString(), GetGitTime(), __DATE__);
 
+	// GenZD Custom
+  SDL_SetHint(SDL_HINT_ACCELEROMETER_AS_JOYSTICK, "0");
+
 	seteuid (getuid ());
 	// Set LC_NUMERIC environment variable in case some library decides to
 	// clear the setlocale call at least this will be correct.
@@ -197,6 +200,7 @@ int main (int argc, char **argv)
 
 	const int result = GameMain();
 
+	printf("Yoshi: finished gzdoom process\n");
 	SDL_Quit();
 
 	return result;

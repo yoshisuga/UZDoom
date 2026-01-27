@@ -6420,7 +6420,12 @@ bool SetAnimationInternal(AActor * self, FName animName, double framerate, int s
 
 	if(animStart == FErr_NotFound)
 	{
-		Printf("Could not find animation %s\n", animName.GetChars());
+		// GenZD Custom: Alice crashes with this so work around
+    if (animName.GetIndex() == -1) {
+      printf("Could not find animation (animName.Index = -1)");
+    } else {
+      Printf("Could not find animation %s\n", animName.GetChars());
+    }
 		if(anims->curAnim.flags & MODELANIM_NONE) return false;
 
 		anims->curAnim.flags = MODELANIM_NONE;

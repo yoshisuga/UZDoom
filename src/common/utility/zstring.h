@@ -52,6 +52,11 @@
 #define IGNORE_FORMAT_POST
 #endif
 
+// GenZD custom
+#if defined(__APPLE__)
+#import "TargetConditionals.h"
+#endif
+
 struct FStringData
 {
 	unsigned int Len;		// Length of string, excluding terminating null
@@ -349,10 +354,17 @@ public:
 	int Compare(const FString &other, size_t len) const { return strncmp(Chars, other.Chars, len); }
 	int Compare(const char *other, size_t len) const { return strncmp(Chars, other, len); }
 
+#if TARGET_OS_IPHONE
+	int CompareNoCase (const FString &other) const { return strcasecmp (Chars, other.Chars); }
+	int CompareNoCase (const char *other) const { return strcasecmp (Chars, other); }
+	int CompareNoCase(const FString &other, int len) const { return strncasecmp(Chars, other.Chars, len); }
+	int CompareNoCase(const char *other, int len) const { return strncasecmp(Chars, other, len); }
+#else	
 	int CompareNoCase (const FString &other) const { return stricmp (Chars, other.Chars); }
 	int CompareNoCase (const char *other) const { return stricmp (Chars, other); }
 	int CompareNoCase(const FString &other, size_t len) const { return strnicmp(Chars, other.Chars, len); }
 	int CompareNoCase(const char *other, size_t len) const { return strnicmp(Chars, other, len); }
+#endif
 
 	enum EmptyTokenType
 	{

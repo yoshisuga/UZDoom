@@ -123,6 +123,12 @@
 #include "i_system.h"  // for SHARE_DIR
 #endif // __unix__
 
+// GenZD custom
+#if defined(__APPLE__)
+#import "TargetConditionals.h"
+#endif
+
+
 using namespace FileSys;
 
 EXTERN_CVAR(Bool, hud_althud)
@@ -1917,7 +1923,11 @@ void ParseCVarInfo()
 			sc.MustGetToken(TK_Identifier);
 			if (FindCVar(sc.String, NULL) != NULL)
 			{
+#if TARGET_OS_IPHONE
+				printf("Yoshi: cvar '%s' already exists", sc.String);
+#else
 				sc.ScriptError("cvar '%s' already exists", sc.String);
+#endif				
 			}
 			cvarname = sc.String;
 			// A default value is optional and signalled by a '=' token.
@@ -2231,6 +2241,12 @@ static void D_DoomInit()
 static void AddAutoloadFiles(const char *autoname, std::vector<std::string>& allwads)
 {
 	LumpFilterIWAD.Format("%s.", autoname);	// The '.' is appened to simplify parsing the string
+
+	#if TARGET_OS_IPHONE
+    autoloadlights = true;
+    autoloadbrightmaps = true;
+    autoloadwidescreen = true;
+#endif
 
 	// [SP] Dialog reaction - load lights.pk3 and brightmaps.pk3 based on user choices
 	if (!(gameinfo.flags & GI_SHAREWARE) && !(Args->CheckParm(FArg_noextras)))
@@ -4221,6 +4237,13 @@ int GameMain()
 	I_ShutdownInput();
 	M_SaveDefaultsFinal();
 	DeleteStartupScreen();
+
+#if TARGET_OS_IPHONE
+  // Yoshi: adding this for iOS
+  restart = 0;
+  FBaseCVar::DisableCallbacks();
+#endif
+
 	C_UninitCVars(); // must come last so that nothing will access the CVARs anymore after deletion.
 	if(ret != 1337)
 	{

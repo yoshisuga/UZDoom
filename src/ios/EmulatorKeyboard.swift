@@ -1,0 +1,935 @@
+//
+//  EmulatorKeyboard.swift
+//
+//  Created by Yoshi Sugawara on 7/30/20.
+//
+
+// TODO: shift key should change the label of the keys to uppercase (need callback mechanism?)
+// pan gesture to outer edges of keyboard view for better dragging
+
+import Foundation
+import SwiftUI
+import UIKit
+
+class KeyboardButton: UIButton {
+    let key: KeyCoded
+    var toggleState = false
+    
+    // MARK: - Functions
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        let newArea = CGRect(
+            x: self.bounds.origin.x - 10.0,
+            y: self.bounds.origin.y - 10.0,
+            width: self.bounds.size.width + 30.0,
+            height: self.bounds.size.height + 30.0
+        )
+        return newArea.contains(point)
+    }
+
+  private func updateColors() {
+       backgroundColor = isHighlighted ? EmulatorKeyboardView.keyPressedBackgroundColor : isSelected ? EmulatorKeyboardView.keySelectedBackgroundColor : EmulatorKeyboardView.keyNormalBackgroundColor
+       layer.borderColor = (isHighlighted ? EmulatorKeyboardView.keyPressedBorderColor : isSelected ? EmulatorKeyboardView.keySelectedBorderColor : EmulatorKeyboardView.keyNormalBorderColor).cgColor
+       titleLabel?.textColor = isHighlighted ? EmulatorKeyboardView.keyPressedTextColor : isSelected ? EmulatorKeyboardView.keySelectedTextColor : EmulatorKeyboardView.keyNormalTextColor
+       titleLabel?.tintColor = titleLabel?.textColor
+   }
+    
+    override open var isHighlighted: Bool {
+        didSet {
+          updateColors()
+        }
+    }
+    
+    override open var isSelected: Bool {
+        didSet {
+          updateColors()
+        }
+    }
+    
+    required init(key: KeyCoded) {
+        self.key = key
+        super.init(frame: .zero)
+        updateColors()
+    }
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+}
+
+@objc protocol EmulatorKeyboardKeyPressedDelegate: AnyObject {
+    func keyDown(_ key: KeyCoded)
+    func keyUp(_ key: KeyCoded)
+}
+
+@objc protocol EmulatorKeyboardModifierPressedDelegate: AnyObject {
+    func modifierPressedWithKey(_ key: KeyCoded, enable: Bool)
+    func isModifierEnabled(key: KeyCoded) -> Bool
+}
+
+protocol EmulatorKeyboardViewDelegate: AnyObject {
+    func toggleAlternateKeys()
+    func refreshModifierStates()
+    func updateTransparency(toAlpha alpha: Float)
+}
+
+class EmulatorKeyboardView: UIView {
+  #if os(iOS)
+  static var keyboardBackgroundColor = UIColor.systemGray6.withAlphaComponent(0.5)
+  #else
+  static var keyboardBackgroundColor = UIColor.black.withAlphaComponent(0.5)
+  #endif
+  static var keyboardCornerRadius = 6.0
+  static var keyboardDragColor = UIColor.systemGray
+  
+  static var keyCornerRadius = 6.0
+  static var keyBorderWidth = 1.0
+  
+  static var rowSpacing = 10.0
+  static var keySpacing = 6.0
+  
+  static var keyNormalFont = UIFont.systemFont(ofSize: 16)
+  static var keyPressedFont = UIFont.boldSystemFont(ofSize: 26)
+  
+  #if os(iOS)
+  static var keyNormalBackgroundColor = UIColor.systemGray4.withAlphaComponent(0.5)
+  #else
+  static var keyNormalBackgroundColor = UIColor.black.withAlphaComponent(0.5)
+  #endif
+  static var keyNormalBorderColor = keyNormalBackgroundColor
+  static var keyNormalTextColor = UIColor.label
+  
+  #if os(iOS)
+  static var keyPressedBackgroundColor = UIColor.systemGray2
+  #else
+  static var keyPressedBackgroundColor = UIColor.systemGray
+  #endif
+  
+  static var keyPressedBorderColor = keyPressedBackgroundColor
+  static var keyPressedTextColor = UIColor.label
+  
+  #if os(iOS)
+  static var keySelectedBackgroundColor = UIColor.systemGray2.withAlphaComponent(0.8)
+  #else
+  static var keySelectedBackgroundColor = UIColor.systemGray.withAlphaComponent(0.8)
+  #endif
+  
+  static var keySelectedBorderColor = keySelectedBackgroundColor
+  static var keySelectedTextColor = UIColor.label
+  
+  var viewModel = EmulatorKeyboardViewModel(keys: [[KeyCoded]]()) {
+    didSet {
+      setupWithModel(viewModel)
+    }
+  }
+  var modifierButtons = Set<KeyboardButton>()
+  
+  weak var delegate: EmulatorKeyboardViewDelegate?
+    
+  private lazy var keyRowsStackView: UIStackView = {
+    let stackView = UIStackView()
+    stackView.translatesAutoresizingMaskIntoConstraints = false
+    stackView.axis = .vertical
+    stackView.distribution = .equalCentering
+    stackView.spacing = 12
+    return stackView
+  }()
+  
+  private lazy var alternateKeyRowsStackView: UIStackView = {
+    let stackView = UIStackView()
+    stackView.translatesAutoresizingMaskIntoConstraints = false
+    stackView.axis = .vertical
+    stackView.distribution = .equalCentering
+    stackView.spacing = 12
+    stackView.isHidden = true
+    return stackView
+  }()
+  
+  let dragMeView: UIView = {
+    let view = UIView(frame: .zero)
+    view.backgroundColor = .white
+    view.translatesAutoresizingMaskIntoConstraints = false
+    view.widthAnchor.constraint(equalToConstant: 80).isActive = true
+    view.heightAnchor.constraint(equalToConstant: 2).isActive = true
+    let outerView = UIView(frame: .zero)
+    outerView.backgroundColor = .clear
+    outerView.translatesAutoresizingMaskIntoConstraints = false
+    outerView.addSubview(view)
+    view.centerXAnchor.constraint(equalTo: outerView.centerXAnchor).isActive = true
+    view.centerYAnchor.constraint(equalTo: outerView.centerYAnchor).isActive = true
+    outerView.heightAnchor.constraint(equalToConstant: 20).isActive = true
+    outerView.widthAnchor.constraint(equalToConstant: 100).isActive = true
+    return outerView
+  }()
+  
+  private var pressedKeyLabels = [String: UILabel]()
+  private var pressedKeyViews = [UIControl: UIView]()
+  
+  convenience init() {
+    self.init(frame: CGRect.zero)
+  }
+  
+  override init(frame: CGRect) {
+    super.init(frame: frame)
+    commonInit()
+  }
+  
+  required init?(coder aDecoder: NSCoder) {
+    super.init(coder: aDecoder)
+    commonInit()
+  }
+  
+  private func commonInit() {
+    isUserInteractionEnabled = true
+    backgroundColor = Self.keyboardBackgroundColor
+    layer.cornerRadius = CGFloat(EmulatorKeyboardView.keyboardCornerRadius)
+    layoutMargins = UIEdgeInsets(top: 16, left: 4, bottom: 16, right: 4)
+    insetsLayoutMarginsFromSafeArea = false
+    addSubview(keyRowsStackView)
+    keyRowsStackView.topAnchor.constraint(equalTo: layoutMarginsGuide.topAnchor).isActive = true
+    keyRowsStackView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor, constant: 4.0).isActive = true
+    keyRowsStackView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor, constant: -4.0).isActive = true
+    addSubview(alternateKeyRowsStackView)
+    alternateKeyRowsStackView.topAnchor.constraint(equalTo: layoutMarginsGuide.topAnchor).isActive = true
+    alternateKeyRowsStackView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor, constant: 4.0).isActive = true
+    alternateKeyRowsStackView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor, constant: -4.0).isActive = true
+    addSubview(dragMeView)
+    dragMeView.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+    dragMeView.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
+  }
+  
+  @objc private func keyPressed(_ sender: KeyboardButton) {
+    if sender.key.keyCode == 9000 { // hack for now
+      return
+    }
+    if !sender.key.isModifier {
+      // make a "stand-in" for our key, and scale up key
+      let view = UIView()
+      view.backgroundColor = EmulatorKeyboardView.keyPressedBackgroundColor
+      view.layer.cornerRadius = CGFloat(EmulatorKeyboardView.keyCornerRadius)
+      view.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+      view.frame = sender.convert(sender.bounds, to: self)
+      addSubview(view)
+      
+      var tx = CGFloat.zero
+      let ty = sender.bounds.height * -1.2
+      
+      if let window = self.window {
+        let rect = sender.convert(sender.bounds, to:window)
+        
+        if rect.maxX > window.bounds.width * 0.9 {
+          tx = sender.bounds.width * -0.2
+        }
+        if rect.minX < window.bounds.width * 0.1 {
+          tx = sender.bounds.width * 0.2
+        }
+      }
+      
+      sender.superview!.bringSubviewToFront(sender)
+      sender.transform = CGAffineTransform(translationX:tx, y:ty).scaledBy(x:1.5, y:1.5)
+      
+      pressedKeyViews[sender] = view
+    }
+    viewModel.keyPressed(sender.key)
+  }
+  
+  @objc private func keyCancelled(_ sender: KeyboardButton) {
+    sender.transform = .identity
+    if let view = pressedKeyViews[sender] {
+      view.removeFromSuperview()
+      pressedKeyViews.removeValue(forKey: sender)
+    }
+  }
+  
+  @objc private func keyReleased(_ sender: KeyboardButton) {
+    sender.transform = .identity
+    if sender.key.keyCode == 9000 {
+      delegate?.toggleAlternateKeys()
+      return
+    }
+    let title = sender.titleLabel?.text ?? "😭"
+    if let view = pressedKeyViews[sender] {
+      view.removeFromSuperview()
+      pressedKeyViews.removeValue(forKey: sender)
+    }
+    sender.isSelected = viewModel.modifierKeyToggleStateForKey(sender.key)
+    viewModel.keyReleased(sender.key)
+    self.delegate?.refreshModifierStates()
+  }
+  
+  func setupWithModel(_ model: EmulatorKeyboardViewModel) {
+    for row in model.keys {
+      let keysInRow = createKeyRow(keys: row)
+      keyRowsStackView.addArrangedSubview(keysInRow)
+    }
+    if let altKeys = model.alternateKeys {
+      for row in altKeys {
+        let keysInRow = createKeyRow(keys: row)
+        alternateKeyRowsStackView.addArrangedSubview(keysInRow)
+      }
+    }
+    if !model.isDraggable {
+      dragMeView.isHidden = true
+    }
+  }
+  
+  func toggleKeysStackView() {
+    if viewModel.alternateKeys != nil {
+      keyRowsStackView.isHidden.toggle()
+      alternateKeyRowsStackView.isHidden.toggle()
+      refreshModifierStates()
+    }
+  }
+  
+  func refreshModifierStates() {
+    modifierButtons.forEach{ button in
+      button.isSelected = viewModel.modifierKeyToggleStateForKey(button.key)
+      //            button.isSelected = button.toggleState
+    }
+  }
+  
+  private func createKey(_ keyCoded: KeyCoded) -> UIButton {
+    let key = KeyboardButton(key: keyCoded)
+    if let imageName = keyCoded.keyImageName {
+      key.tintColor = EmulatorKeyboardView.keyNormalTextColor
+      key.setImage(UIImage(systemName: imageName), for: .normal)
+      if let highlightedImageName = keyCoded.keyImageNameHighlighted {
+        key.setImage(UIImage(systemName: highlightedImageName), for: .highlighted)
+        key.setImage(UIImage(systemName: highlightedImageName), for: .selected)
+      }
+    } else {
+      key.setTitle(keyCoded.keyLabel, for: .normal)
+      key.titleLabel?.font = EmulatorKeyboardView.keyNormalFont
+      key.setTitleColor(EmulatorKeyboardView.keyNormalTextColor, for: .normal)
+      key.setTitleColor(EmulatorKeyboardView.keySelectedTextColor, for: .selected)
+      key.setTitleColor(EmulatorKeyboardView.keyPressedTextColor, for: .highlighted)
+    }
+    key.translatesAutoresizingMaskIntoConstraints = false
+    key.widthAnchor.constraint(equalToConstant: (40 * CGFloat(keyCoded.keySize.rawValue))).isActive = true
+    key.heightAnchor.constraint(equalToConstant: 45).isActive = true
+    key.backgroundColor = EmulatorKeyboardView.keyNormalBackgroundColor
+    key.layer.borderWidth = CGFloat(EmulatorKeyboardView.keyBorderWidth)
+    key.layer.borderColor = EmulatorKeyboardView.keyNormalBorderColor.cgColor
+    key.layer.cornerRadius = CGFloat(EmulatorKeyboardView.keyCornerRadius)
+    key.addTarget(self, action: #selector(keyPressed(_:)), for: .touchDown)
+    key.addTarget(self, action: #selector(keyReleased(_:)), for: .touchUpInside)
+    key.addTarget(self, action: #selector(keyReleased(_:)), for: .touchUpOutside)
+    key.addTarget(self, action: #selector(keyCancelled(_:)), for: .touchCancel)
+    if keyCoded.isModifier {
+      modifierButtons.update(with: key)
+    }
+    return key
+  }
+  
+  private func createKeyRow(keys: [KeyCoded]) -> UIStackView {
+    let subviews: [UIView] = keys.enumerated().map { index, keyCoded -> UIView in
+      if keyCoded is SpacerKey {
+        let spacer = UIView()
+        spacer.widthAnchor.constraint(equalToConstant: 25.0 * CGFloat(keyCoded.keySize.rawValue)).isActive = true
+        spacer.heightAnchor.constraint(equalToConstant: 25.0).isActive = true
+        return spacer
+      } else if let sliderKey = keyCoded as? SliderKey {
+        sliderKey.keyboardView = self
+        return sliderKey.createView()
+      }
+      return createKey(keyCoded)
+    }
+    let stack = UIStackView(arrangedSubviews: subviews)
+    stack.axis = .horizontal
+    stack.distribution = .fill
+    stack.spacing = 8
+    return stack
+  }
+}
+
+@objc enum KeySize: Int {
+  case standard = 1, wide, wider
+}
+
+// represents a key that has an underlying code that gets sent to the emulator
+@objc protocol KeyCoded: AnyObject {
+  var keyLabel: String { get }
+  var keyImageName: String? { get }
+  var keyImageNameHighlighted: String? { get }
+  var keyCode: Int { get }
+  var keySize: KeySize { get }
+  var isModifier: Bool { get }
+}
+
+protocol KeyRowsDataSource {
+  func keyForPositionAt(_ position: KeyPosition) -> KeyCoded?
+}
+
+@objc class EmulatorKeyboardKey: NSObject, KeyCoded {
+  let keyLabel: String
+  var keyImageName: String?
+  var keyImageNameHighlighted: String?
+  let keyCode: Int
+  let keySize: KeySize
+  let isModifier: Bool
+  
+  override var description: String {
+    return String(format: "\(keyLabel) (%02X)", keyCode)
+  }
+  
+  init(label: String, code: Int, keySize: KeySize = .standard, isModifier: Bool = false, imageName: String? = nil, imageNameHighlighted: String? = nil)  {
+    self.keyLabel = label
+    self.keyCode = code
+    self.keySize = keySize
+    self.isModifier = isModifier
+    self.keyImageName = imageName
+    self.keyImageNameHighlighted = imageNameHighlighted
+  }
+}
+
+class SpacerKey: KeyCoded {
+  let keyLabel = ""
+  let keyCode = 0
+  let keySize: KeySize
+  let isModifier = false
+  let keyImageName: String? = nil
+  let keyImageNameHighlighted: String? = nil
+  init(keySize: KeySize = .standard) {
+    self.keySize = keySize
+  }
+}
+
+class SliderKey: KeyCoded {
+  let keyLabel = ""
+  let keyCode = 0
+  let keySize: KeySize
+  let isModifier = false
+  let keyImageName: String? = nil
+  let keyImageNameHighlighted: String? = nil
+  weak var keyboardView: EmulatorKeyboardView?
+  
+  init(keySize: KeySize = .standard) {
+    self.keySize = keySize
+  }
+  func createView() -> UIView {
+#if os(iOS)
+    let slider = UISlider(frame: .zero)
+    slider.minimumValue = 0.1
+    slider.maximumValue = 1.0
+    slider.addTarget(self, action: #selector(adjustKeyboardAlpha(_:)), for: .valueChanged)
+    slider.value = 1.0
+    let size = CGSize(width:EmulatorKeyboardView.keyNormalFont.pointSize, height:EmulatorKeyboardView.keyNormalFont.pointSize)
+    slider.setThumbImage(UIImage.dot(size:size, color:EmulatorKeyboardView.keyNormalTextColor), for: .normal)
+    return slider
+#else
+    return UIView()
+#endif
+  }
+  
+#if os(iOS)
+  @objc func adjustKeyboardAlpha(_ sender: UISlider) {
+    keyboardView?.delegate?.updateTransparency(toAlpha: sender.value)
+  }
+#endif
+}
+
+private extension UIImage {
+  static func dot(size:CGSize, color:UIColor) -> UIImage {
+    return UIGraphicsImageRenderer(size: size).image { context in
+      context.cgContext.setFillColor(color.cgColor)
+      context.cgContext.fillEllipse(in: CGRect(origin:.zero, size:size))
+    }
+  }
+}
+
+struct KeyPosition {
+  let row: Int
+  let column: Int
+}
+
+@objc class EmulatorKeyboardViewModel: NSObject, KeyRowsDataSource {
+  var keys = [[KeyCoded]]()
+  var alternateKeys: [[KeyCoded]]?
+  var modifiers: [Int16: KeyCoded]?
+  
+  var isDraggable = true
+  
+  @objc weak var delegate: EmulatorKeyboardKeyPressedDelegate?
+  @objc weak var modifierDelegate: EmulatorKeyboardModifierPressedDelegate?
+  
+  init(keys: [[KeyCoded]], alternateKeys: [[KeyCoded]]? = nil) {
+    self.keys = keys
+    self.alternateKeys = alternateKeys
+  }
+  
+  func createView() -> EmulatorKeyboardView {
+    let view = EmulatorKeyboardView()
+    view.viewModel = self
+    return view
+  }
+  
+  func keyForPositionAt(_ position: KeyPosition) -> KeyCoded? {
+    guard position.row < keys.count else {
+      return nil
+    }
+    let row = keys[position.row]
+    guard position.column < row.count else {
+      return nil
+    }
+    return row[position.column]
+  }
+  
+  func modifierKeyToggleStateForKey(_ key: KeyCoded) -> Bool {
+    return key.isModifier && (modifierDelegate?.isModifierEnabled(key: key) ?? false)
+  }
+  
+  func keyPressed(_ key: KeyCoded) {
+    if key.isModifier {
+      let isPressed = modifierDelegate?.isModifierEnabled(key: key) ?? false
+      modifierDelegate?.modifierPressedWithKey(key, enable: !isPressed)
+      return
+    }
+    delegate?.keyDown(key)
+  }
+  
+  func keyReleased(_ key: KeyCoded) {
+    if key.isModifier {
+      return
+    }
+    delegate?.keyUp(key)
+  }
+  
+  // KeyCoded can support a shifted key label
+  // view can update with shifted key labels?
+  // cluster can support alternate keys and view can swap them out?
+}
+
+@objc class EmulatorKeyboardController: UIViewController {
+  class EmulatorKeyboardPassthroughView: UIView {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+      let hitView = super.hitTest(point, with: event)
+      if hitView == self {
+        return nil
+      }
+      return hitView
+    }
+  }
+  
+  @objc let leftKeyboardModel: EmulatorKeyboardViewModel
+  @objc let rightKeyboardModel: EmulatorKeyboardViewModel
+  
+  @objc lazy var leftKeyboardView: EmulatorKeyboardView = {
+    let view = leftKeyboardModel.createView()
+    view.delegate = self
+    return view
+  }()
+  @objc lazy var rightKeyboardView: EmulatorKeyboardView = {
+    let view = rightKeyboardModel.createView()
+    view.delegate = self
+    return view
+  }()
+  var keyboardConstraints = [NSLayoutConstraint]()
+  
+  var modifiersPressed = Set<Int>()
+  
+  let controlOptionsButton: UIButton = {
+    let button = UIButton(type: .custom)
+    button.setImage(UIImage(systemName: "gear"), for: .normal)
+    button.translatesAutoresizingMaskIntoConstraints = false
+    button.heightAnchor.constraint(equalToConstant: 50).isActive = true
+    button.widthAnchor.constraint(equalTo: button.heightAnchor).isActive = true
+    button.tintColor = .white
+    button.alpha = 0.4
+    return button
+  }()
+  
+  let toggleButton: UIButton = {
+    let button = UIButton(type: .custom)
+    button.setImage(UIImage(systemName: "keyboard.fill"), for: .normal)
+    button.translatesAutoresizingMaskIntoConstraints = false
+    button.heightAnchor.constraint(equalToConstant: 50).isActive = true
+    button.widthAnchor.constraint(equalTo: button.heightAnchor).isActive = true
+    button.tintColor = .white
+    button.alpha = 0.4
+    return button
+  }()
+  
+  let toggleVirtualControllerButton: UIButton = {
+    let button = UIButton(type: .custom)
+    button.setImage(UIImage(systemName: "gamecontroller.fill"), for: .normal)
+    button.translatesAutoresizingMaskIntoConstraints = false
+    button.heightAnchor.constraint(equalToConstant: 50).isActive = true
+    button.widthAnchor.constraint(equalTo: button.heightAnchor).isActive = true
+    button.tintColor = .white
+    button.alpha = 0.4
+    return button
+  }()
+  
+  let toggleVirtualControllerButton2: UIButton = {
+    let button = UIButton(type: .custom)
+    button.setImage(UIImage(systemName: "gamecontroller.fill"), for: .normal)
+    button.translatesAutoresizingMaskIntoConstraints = false
+    button.heightAnchor.constraint(equalToConstant: 50).isActive = true
+    button.widthAnchor.constraint(equalTo: button.heightAnchor).isActive = true
+    button.tintColor = .red
+    button.alpha = 0.4
+    return button
+  }()
+  
+  
+  @objc static let escButtonName = "MENU"
+  let escButtonView: GamepadButtonView = {
+    let view = GamepadButtonView(buttonName: escButtonName)
+    return view
+  }()
+  
+  let escButton: UIButton = {
+    let button = UIButton(type: .custom)
+    button.setImage(UIImage(systemName: "escape"), for: .normal)
+    button.translatesAutoresizingMaskIntoConstraints = false
+    button.heightAnchor.constraint(equalToConstant: 50).isActive = true
+    button.widthAnchor.constraint(equalTo: button.heightAnchor).isActive = true
+    button.tintColor = .white
+    button.alpha = 0.4
+    return button
+  }()
+  
+  let customizeControlsButton: UIButton = {
+    let button = UIButton(type: .custom)
+    button.setImage(UIImage(systemName: "arrow.up.left.and.down.right.and.arrow.up.right.and.down.left"), for: .normal)
+    button.translatesAutoresizingMaskIntoConstraints = false
+    button.heightAnchor.constraint(equalToConstant: 50).isActive = true
+    button.widthAnchor.constraint(equalTo: button.heightAnchor).isActive = true
+    button.tintColor = .white
+    button.alpha = 0.4
+    return button
+  }()
+  
+  let hideRevealControlsButton: UIButton = {
+    let button = UIButton(type: .custom)
+    button.setImage(UIImage(systemName: "chevron.left.circle"), for: .normal)
+    button.setImage(UIImage(systemName: "chevron.right.circle"), for: .selected)
+    button.translatesAutoresizingMaskIntoConstraints = false
+    button.heightAnchor.constraint(equalToConstant: 50).isActive = true
+    button.widthAnchor.constraint(equalTo: button.heightAnchor).isActive = true
+    button.tintColor = .white
+    button.alpha = 0.4
+    return button
+  }()
+  
+  var optionsStack = UIStackView()
+  
+  var touchControlsView = UIView()
+  
+#if os(iOS)
+  var touchControlsVC: TouchControlViewController?
+  let gyroHandler = GyroscopeHandler()
+#endif
+  
+  @objc init(leftKeyboardModel: EmulatorKeyboardViewModel, rightKeyboardModel: EmulatorKeyboardViewModel) {
+    self.leftKeyboardModel = leftKeyboardModel
+    self.rightKeyboardModel = rightKeyboardModel
+    super.init(nibName: nil, bundle: nil)
+  }
+  
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+  
+  override func loadView() {
+    view = EmulatorKeyboardPassthroughView()
+  }
+  
+  override func viewDidLoad() {
+    super.viewDidLoad()
+    setupView()
+    
+    let panGesture = UIPanGestureRecognizer(target: self, action: #selector(draggedView(_:)))
+    leftKeyboardView.dragMeView.isUserInteractionEnabled = true
+    leftKeyboardView.dragMeView.addGestureRecognizer(panGesture)
+    let panGestureRightKeyboard = UIPanGestureRecognizer(target: self, action: #selector(draggedView(_:)))
+    rightKeyboardView.dragMeView.isUserInteractionEnabled = true
+    rightKeyboardView.dragMeView.addGestureRecognizer(panGestureRightKeyboard)
+    
+    GameControllerHandler.shared.delegate = self
+    
+#if os(iOS)
+    gyroHandler.setup()
+#endif
+    
+    NotificationCenter.default.addObserver(self, selector: #selector(gameControllerNotification(_:)), name: GZDNotificationName.gameControllerDidInput, object: nil)
+  }
+  
+  @objc private func gameControllerNotification(_ notification: Notification) {
+    gameControllerDidConnect()
+  }
+  
+  override func viewDidAppear(_ animated: Bool) {
+    super.viewDidAppear(animated)
+#if os(iOS)
+    gyroHandler.updateOrientation()
+#endif
+  }
+  
+  override func viewWillTransition(to size: CGSize, with coordinator: any UIViewControllerTransitionCoordinator) {
+    #if os(iOS)
+    gyroHandler.updateOrientation()
+    #endif
+  }
+  
+  func setupView() {
+    NSLayoutConstraint.deactivate(keyboardConstraints)
+    keyboardConstraints.removeAll()
+    leftKeyboardView.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(leftKeyboardView)
+    leftKeyboardView.heightAnchor.constraint(equalToConstant: 310).isActive = true
+    leftKeyboardView.widthAnchor.constraint(equalToConstant: 260).isActive = true
+    keyboardConstraints.append(contentsOf: [
+      leftKeyboardView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+      leftKeyboardView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+    ])
+    rightKeyboardView.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(rightKeyboardView)
+    keyboardConstraints.append(contentsOf: [
+      rightKeyboardView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+      rightKeyboardView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+    ])
+    rightKeyboardView.heightAnchor.constraint(equalToConstant: 310).isActive = true
+    rightKeyboardView.widthAnchor.constraint(equalToConstant: 260).isActive = true
+    NSLayoutConstraint.activate(keyboardConstraints)
+    
+#if os(iOS)
+    let touchControlsViewController = TouchControlViewController()
+    touchControlsViewController.onControlsVisibilityChange = { [weak self] isHidden in
+      guard let self else { return }
+      self.optionsStack.isHidden = isHidden
+//      if !self.optionsStack.isHidden {
+        self.leftKeyboardView.isHidden = true
+        self.rightKeyboardView.isHidden = true
+//      }
+    }
+    addChild(touchControlsViewController)
+    touchControlsView = touchControlsViewController.view
+    touchControlsView.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(touchControlsView)
+    touchControlsView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+    touchControlsView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+    touchControlsView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+    touchControlsView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+    touchControlsView.isHidden = true
+    touchControlsViewController.didMove(toParent: self)
+    touchControlsVC = touchControlsViewController
+#endif
+    
+    controlOptionsButton.addTarget(self, action: #selector(changeInputMode(_:)), for: .touchUpInside)
+    
+    toggleButton.addTarget(self, action: #selector(changeInputMode(_:)), for: .touchUpInside)
+    
+    toggleVirtualControllerButton.addTarget(self, action: #selector(changeInputMode(_:)), for: .touchUpInside)
+    
+    customizeControlsButton.addTarget(self, action: #selector(changeInputMode(_:)), for: .touchUpInside)
+    
+    //      view.addSubview(escButtonView)
+    //      escButtonView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20).isActive = true
+    //      escButtonView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20).isActive = true
+    //      escButtonView.delegate = self
+    
+    escButton.addTarget(self, action: #selector(escButtonPressed(_:)), for: .touchUpInside)
+    
+    hideRevealControlsButton.addTarget(self, action: #selector(hideRevealButtonPressed(_:)), for: .touchUpInside)
+    
+    optionsStack = UIStackView(arrangedSubviews: [
+      escButton, controlOptionsButton, toggleButton, toggleVirtualControllerButton, customizeControlsButton, hideRevealControlsButton
+    ])
+    optionsStack.axis = .horizontal
+    optionsStack.spacing = 8
+    optionsStack.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(optionsStack)
+    optionsStack.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+    optionsStack.topAnchor.constraint(equalTo: view.topAnchor, constant: 4).isActive = true
+    
+    // setup initial state: show gamepad
+    leftKeyboardView.isHidden = true
+    rightKeyboardView.isHidden = true
+    touchControlsView.isHidden = false
+    customizeControlsButton.isHidden = false
+  }
+  
+  @objc func hideRevealButtonPressed(_ sender: UIButton) {
+    sender.isSelected.toggle()
+    if sender.isSelected {
+      UIView.animate(withDuration: 0.3) {
+        self.escButton.isHidden = true
+        self.controlOptionsButton.isHidden = true
+        self.toggleButton.isHidden = true
+        self.toggleVirtualControllerButton.isHidden = true
+        self.customizeControlsButton.isHidden = true
+        self.hideRevealControlsButton.alpha = 0.2
+        self.optionsStack.layoutIfNeeded()
+      }
+    } else {
+      UIView.animate(withDuration: 0.3) {
+        self.escButton.isHidden = false
+        self.controlOptionsButton.isHidden = false
+        self.toggleButton.isHidden = false
+        self.toggleVirtualControllerButton.isHidden = false
+        self.customizeControlsButton.isHidden = false
+        self.hideRevealControlsButton.alpha = 0.4
+        self.optionsStack.layoutIfNeeded()
+      }
+    }
+  }
+  
+  @objc func changeInputMode(_ sender: UIButton) {
+    if sender == controlOptionsButton {
+      var optionsView = ControlOptionsView(dismissClosure: { [weak self] in
+        self?.dismiss(animated: true)
+#if os(iOS)
+        self?.gyroHandler.setup()
+#endif
+      }).environmentObject(LauncherViewModel())
+      let hostingController = UIHostingController(rootView: optionsView)
+      present(hostingController, animated: true)
+    } else if sender == toggleButton {
+      leftKeyboardView.isHidden = false
+      rightKeyboardView.isHidden = false
+      escButtonView.isHidden = true
+      #if os(iOS)
+      touchControlsVC?.changeTouchControls(isHidden: true, skipOnVisibilityChange: true)
+      #endif
+//      touchControlsView.isHidden = true
+      customizeControlsButton.isHidden = true
+      view.bringSubviewToFront(leftKeyboardView)
+      view.bringSubviewToFront(rightKeyboardView)
+    } else if sender == toggleVirtualControllerButton {
+      escButtonView.isHidden = false
+      leftKeyboardView.isHidden = true
+      rightKeyboardView.isHidden = true
+//      touchControlsView.isHidden.toggle()
+#if os(iOS)
+      touchControlsVC?.toggleTouchControls()
+#endif
+      customizeControlsButton.isHidden = false
+    } else if sender == customizeControlsButton {
+#if os(iOS)
+      touchControlsVC?.arrangeButtonTapped(customizeControlsButton)
+#endif
+    }
+  }
+  
+  override func viewWillAppear(_ animated: Bool) {
+    super.viewWillAppear(animated)
+    if GameControllerHandler.shared.controller != nil {
+      gameControllerDidConnect()
+    } else {
+      gameControllerDidDisconnect()
+    }
+  }
+  
+  @objc func escButtonPressed(_ sender: UIButton) {
+    guard let utils = IOSUtils.shared() else {
+      return
+    }
+    utils.handleOverlayButtonName(Self.escButtonName, isPressed: true)
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+      utils.handleOverlayButtonName(Self.escButtonName, isPressed: false)
+    }
+  }
+  
+  @objc func toggleVisibility(_ sender: UIButton) {
+    toggleVisibility()
+  }
+  
+  func setupViewFrames() {
+    // initial placement on the bottom corners
+    // since we don't know the frame of this view yet until layout time,
+    // assume it's taking the full screen
+    let screenFrame = UIScreen.main.bounds
+    let keyboardHeight: CGFloat = 250.0
+    let keyboardWidth: CGFloat = 180.0
+    let bottomLeftFrame = CGRect(
+      x: 0,
+      y: screenFrame.size.height - 20 - keyboardHeight - 20,
+      width: keyboardWidth, height: keyboardHeight)
+    let bottomRightFrame = CGRect(
+      x: screenFrame.size.width - 20 - keyboardWidth,
+      y:screenFrame.size.height - 20 - keyboardHeight - 20,
+      width: keyboardWidth, height: keyboardHeight
+    )
+    view.addSubview(leftKeyboardView)
+    view.addSubview(rightKeyboardView)
+    leftKeyboardView.frame = bottomLeftFrame
+    rightKeyboardView.frame = bottomRightFrame
+  }
+  
+  func setupKeyModels() {
+    leftKeyboardView.setupWithModel(leftKeyboardModel)
+    rightKeyboardView.setupWithModel(rightKeyboardModel)
+  }
+  
+  @objc func draggedView(_ sender:UIPanGestureRecognizer){
+    guard let keyboardView = sender.view?.superview else {
+      return
+    }
+    let translation = sender.translation(in: self.view)
+    keyboardView.center = CGPoint(x: keyboardView.center.x + translation.x, y: keyboardView.center.y + translation.y)
+    sender.setTranslation(CGPoint.zero, in: self.view)
+  }
+  
+  func toggleVisibility() {
+    leftKeyboardView.isHidden = !leftKeyboardView.isHidden
+    rightKeyboardView.isHidden = !rightKeyboardView.isHidden
+  }
+  
+  override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+    guard presses.first != nil else { return }
+#if os(iOS)
+    touchControlsVC?.changeTouchControls(isHidden: true)
+#endif
+  }
+}
+
+extension EmulatorKeyboardController: EmulatorKeyboardViewDelegate {
+  func toggleAlternateKeys() {
+    for keyboard in [leftKeyboardView, rightKeyboardView] {
+      keyboard.toggleKeysStackView()
+    }
+  }
+  func refreshModifierStates() {
+    for keyboard in [leftKeyboardView, rightKeyboardView] {
+      keyboard.refreshModifierStates()
+    }
+  }
+  func updateTransparency(toAlpha alpha: Float) {
+    for keyboard in [leftKeyboardView, rightKeyboardView] {
+      keyboard.alpha = CGFloat(alpha)
+    }
+  }
+}
+
+extension EmulatorKeyboardController: DPadDelegate {
+  func dPad(_ dPadView: DPadView, didPress: DPadDirection) {
+    guard let utils = IOSUtils.shared() else {
+      return
+    }
+    utils.handleOverlayDPad(with: didPress)
+  }
+  
+  func dPadDidRelease(_ dPadView: DPadView) {
+    guard let utils = IOSUtils.shared() else {
+      return
+    }
+    utils.handleOverlayDPad(with: DPadDirection.none)
+  }
+}
+
+extension EmulatorKeyboardController: GameControllerHandlerDelegate {
+  func gameControllerDidConnect() {
+    #if os(iOS)
+    touchControlsVC?.changeTouchControls(isHidden: true)
+    #endif
+    optionsStack.isHidden = true
+    leftKeyboardView.isHidden = true
+    rightKeyboardView.isHidden = true
+  }
+  
+  func gameControllerDidDisconnect() {
+    #if os(iOS)
+    touchControlsVC?.changeTouchControls(isHidden: false)
+    #endif
+    optionsStack.isHidden = false
+  }
+}

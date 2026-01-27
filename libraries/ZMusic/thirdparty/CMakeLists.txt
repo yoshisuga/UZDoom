@@ -28,4 +28,16 @@ add_subdirectory(timidityplus)
 add_subdirectory(wildmidi)
 add_subdirectory(oplsynth)
 add_subdirectory(libxmp)
-add_subdirectory(fluidsynth/src)
+
+# FluidSynth can optionally use an external library instead of building from source
+# Check for external FluidSynth before deciding whether to build internal
+option(DYN_FLUIDSYNTH "Dynamically load FluidSynth (not supported, use OFF with external library)" OFF)
+if(NOT DYN_FLUIDSYNTH)
+	find_package(FluidSynth)
+endif()
+
+if(NOT FLUIDSYNTH_FOUND)
+	add_subdirectory(fluidsynth/src)
+else()
+	message(STATUS "Using external FluidSynth library: ${FLUIDSYNTH_LIBRARY}")
+endif()

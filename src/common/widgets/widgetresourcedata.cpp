@@ -110,7 +110,7 @@ static std::vector<uint8_t> LoadDiskFile(const char* name)
 std::vector<SingleFontData> LoadWidgetFontData(const std::string& name)
 {
 	std::vector<SingleFontData> returnv;
-	if (!stricmp(name.c_str(), "notosans"))
+	if (name == "notosans")
 	{
 		// to update/add fonts:
 		// tools/download-fonts.sh wadsrc/static widgets/noto 'Noto Sans' 'Noto Sans Armenian' 'Noto Sans Georgian' 'Noto Sans JP' 'Noto Sans KR'

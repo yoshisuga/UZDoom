@@ -38,6 +38,11 @@
 #include "stats.h"
 #include <zmusic.h>
 
+// GenZD Custom
+#ifdef __APPLE__
+#import "TargetConditionals.h"
+#endif
+
 
 EXTERN_CVAR (Float, snd_sfxvolume)
 EXTERN_CVAR(Float, snd_musicvolume)
@@ -59,7 +64,7 @@ FARG(nosound, "Configuration", "Turns off all in-game sound/music.", "",
 FARG(nosfx, "Configuration", "Turns off in-game sound effects.", "",
 	"Prevents the playback of sound effects.");
 
-#if !defined(NO_OPENAL)	
+#if !defined(NO_OPENAL)	|| defined(TARGET_OS_IPHONE)
 #define DEF_BACKEND "openal"
 #else
 #define DEF_BACKEND "null"

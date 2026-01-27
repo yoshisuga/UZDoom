@@ -33,6 +33,15 @@
 #include "basics.h"
 #include "st_start.h"
 
+// GenZD custom
+#if defined(__APPLE__)
+#import "TargetConditionals.h"
+#if TARGET_OS_IPHONE
+#include "ios/ios-input-hook.h"
+#endif
+#endif
+
+
 // MACROS ------------------------------------------------------------------
 
 // TYPES -------------------------------------------------------------------
@@ -204,6 +213,12 @@ void FTTYStartupScreen::NetProgress(int cur, int limit)
 		// Spinny-type progress meter, because we're a guest waiting for the host.
 		fprintf(stderr, "\r%s: %c", TheNetMessage, SpinnyProgressChars[NetCurPos & 3]);
 		fflush(stderr);
+#if TARGET_OS_IPHONE
+    char message[1000];
+    snprintf(message, sizeof(message), "\r%s: %c", TheNetMessage, SpinnyProgressChars[NetCurPos & 3]);
+    IOS_ShowSystemModal("Joining Game", message);
+    IOS_SpinRunLoop();
+#endif		
 	}
 	else if (NetMaxPos > 1)
 	{
@@ -214,6 +229,12 @@ void FTTYStartupScreen::NetProgress(int cur, int limit)
 			fputc('.', stderr);
 		}
 		fprintf(stderr, "%*c[%2d/%2d]", NetMaxPos + 1 - NetCurPos, ' ', NetCurPos, NetMaxPos);
+#if TARGET_OS_IPHONE
+    char message[1000];
+    snprintf(message, sizeof(message), "%s: %*c[%2d/%2d]", TheNetMessage, NetMaxPos + 1 - NetCurPos, ' ', NetCurPos, NetMaxPos);
+    IOS_ShowSystemModal("Multiplayer Setup", message);
+    IOS_SpinRunLoop();
+#endif		
 		fflush(stderr);
 	}
 }
@@ -236,7 +257,11 @@ void FTTYStartupScreen::NetDone()
 		tcsetattr (STDIN_FILENO, TCSANOW, &OldTermIOS);
 		printf ("\n");
 		DidNetInit = false;
-	}	
+	}
+#if TARGET_OS_IPHONE
+  IOS_DismissSystemModal();
+  IOS_StopBonjourService();
+#endif	
 }
 
 void FTTYStartupScreen::NetClose()
@@ -295,12 +320,22 @@ bool FTTYStartupScreen::NetLoop(bool (*loopCallback)(void *), void *data)
 
 		retval = select (1, &rfds, NULL, NULL, &tv);
 
+#if TARGET_OS_IPHONE
+    IOS_SpinRunLoop();
+#endif		
+
 		if (retval == -1)
 		{
 			// Error
 		}
 		else if (retval == 0)
 		{
+#if TARGET_OS_IPHONE
+      if (IOS_DidCancelSystemModal()) {
+        printf("yoshi debug: detected modal cancel");
+        return false;
+      }
+#endif			
 			if (loopCallback (data))
 			{
 				fputc ('\n', stderr);
@@ -309,6 +344,12 @@ bool FTTYStartupScreen::NetLoop(bool (*loopCallback)(void *), void *data)
 		}
 		else
 		{
+#if TARGET_OS_IPHONE
+      if (IOS_DidCancelSystemModal()) {
+        printf("yoshi debug: detected modal cancel");
+        return false;
+      }
+#endif			
 			ssize_t amt = read (STDIN_FILENO, &k, 1);	// Check input on stdin
 			if (amt == 0)
 			{

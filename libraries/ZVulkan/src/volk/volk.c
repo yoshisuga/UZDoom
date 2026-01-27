@@ -2,8 +2,14 @@
 #if defined(_WIN32)
 #define VK_USE_PLATFORM_WIN32_KHR
 #elif defined(__APPLE__)
+#import "TargetConditionals.h"
+#import <os/log.h>
+#if TARGET_OS_IPHONE
+#define VK_USE_PLATFORM_IOS_MVK
+#else
 #define VK_USE_PLATFORM_MACOS_MVK
 #define VK_USE_PLATFORM_METAL_EXT
+#endif
 #else
 #if defined(VULKAN_USE_XLIB)
 #define VK_USE_PLATFORM_XLIB_KHR
@@ -77,6 +83,13 @@ VkResult volkInitialize(void)
 	// note: function pointer is cast through void function pointer to silence cast-function-type warning on gcc8
 	vkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr)(void(*)(void))GetProcAddress(module, "vkGetInstanceProcAddr");
 #elif defined(__APPLE__)
+#if TARGET_OS_IPHONE
+  void* module = dlopen("moltenVK", RTLD_NOW | RTLD_LOCAL);
+  if (!module) {
+    os_log(OS_LOG_DEFAULT, "GenZD Molten VK init failed, error: %{public}s", dlerror());
+    return VK_ERROR_INITIALIZATION_FAILED;
+  }
+#else
 	void* module = dlopen("libvulkan.dylib", RTLD_NOW | RTLD_LOCAL);
 	if (!module)
 		module = dlopen("libvulkan.1.dylib", RTLD_NOW | RTLD_LOCAL);
@@ -84,7 +97,7 @@ VkResult volkInitialize(void)
 		module = dlopen("libMoltenVK.dylib", RTLD_NOW | RTLD_LOCAL);
 	if (!module)
 		return VK_ERROR_INITIALIZATION_FAILED;
-
+#endif
 	vkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr)dlsym(module, "vkGetInstanceProcAddr");
 #else
 	void* module = dlopen("libvulkan.so.1", RTLD_NOW | RTLD_LOCAL);

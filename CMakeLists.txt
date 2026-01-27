@@ -59,8 +59,11 @@ if( FORCE_CROSSCOMPILE )
 	set( CMAKE_CROSSCOMPILING TRUE )
 endif()
 
+# GenZD Custom
 if(CMAKE_CROSSCOMPILING)
-	set(IMPORT_EXECUTABLES "IMPORTFILE-NOTFOUND" CACHE FILEPATH "Export file from native build.")
+	set(IMPORT_EXECUTABLES "/Users/yoshi/Code/personal/gzdoom/build-macos/ImportExecutables.cmake" CACHE FILEPATH "Export file from native build.")
+	message(STATUS "yoshi debug: import executables: ${IMPORT_EXECUTABLES}")
+	# set(IMPORT_EXECUTABLES "IMPORTFILE-NOTFOUND" CACHE FILEPATH "Export file from native build.")
 	include(${IMPORT_EXECUTABLES})
 endif()
 
@@ -230,16 +233,26 @@ endmacro()
 include( CheckFunctionExists )
 
 macro( gz_require_stricmp )
-	CHECK_FUNCTION_EXISTS( stricmp STRICMP_EXISTS )
-	if( NOT STRICMP_EXISTS )
+	# Skip check when cross-compiling (e.g., iOS) - assume POSIX
+	if( CMAKE_CROSSCOMPILING )
 		add_definitions( -Dstricmp=strcasecmp )
+	else()
+		CHECK_FUNCTION_EXISTS( stricmp STRICMP_EXISTS )
+		if( NOT STRICMP_EXISTS )
+			add_definitions( -Dstricmp=strcasecmp )
+		endif()
 	endif()
 endmacro()
 
 macro( gz_require_strnicmp )
-	CHECK_FUNCTION_EXISTS( strnicmp STRNICMP_EXISTS )
-	if( NOT STRNICMP_EXISTS )
+	# Skip check when cross-compiling (e.g., iOS) - assume POSIX
+	if( CMAKE_CROSSCOMPILING )
 		add_definitions( -Dstrnicmp=strncasecmp )
+	else()
+		CHECK_FUNCTION_EXISTS( strnicmp STRNICMP_EXISTS )
+		if( NOT STRNICMP_EXISTS )
+			add_definitions( -Dstrnicmp=strncasecmp )
+		endif()
 	endif()
 endmacro()
 

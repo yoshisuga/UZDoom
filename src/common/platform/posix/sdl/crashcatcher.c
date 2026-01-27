@@ -38,6 +38,7 @@
 #endif
 #elif defined (__APPLE__) || defined (BSD)
 #include <signal.h>
+#import "TargetConditionals.h"
 #endif
 
 int I_FileAvailable(const char* filename);
@@ -169,9 +170,12 @@ static void gdb_info(pid_t pid)
 		printf("Executing: %s\n", cmd_buf);
 		fflush(stdout);
 
-		system(cmd_buf);
+// GenZD Custom
+#if !defined(TARGET_OS_IPHONE)
+		system(cmd_buf);		
 		/* Clean up */
 		remove(respfile);
+#endif
 	}
 	else
 	{
@@ -243,6 +247,7 @@ static void crash_catcher(int signum, siginfo_t *siginfo, void *context)
 		cc_user_info(crash_info.buf, crash_info.buf+sizeof(crash_info.buf));
 
 	/* Fork off to start a crash handler */
+#if !TARGET_OS_TV
 	switch((dbg_pid=fork()))
 	{
 		/* Error */
@@ -281,6 +286,7 @@ static void crash_catcher(int signum, siginfo_t *siginfo, void *context)
 				}
 			} while(1);
 	}
+#endif	
 }
 
 static void crash_handler(const char *logfile)
@@ -399,7 +405,9 @@ static void crash_handler(const char *logfile)
 		else
 			snprintf(buf, sizeof(buf), "xmessage -buttons \"Okay:0\" -center -file \"%s\"", logfile);
 
+#if !defined(TARGET_OS_IPHONE)
 		system(buf);
+#endif		
 	}
 	exit(0);
 }
@@ -429,7 +437,9 @@ int cc_install_handlers(int argc, char **argv, int num_signals, int *signals, co
 	altss.ss_sp = altstack;
 	altss.ss_flags = 0;
 	altss.ss_size = sizeof(altstack);
+#if !TARGET_OS_TV	
 	sigaltstack(&altss, NULL);
+#endif	
 
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_sigaction = crash_catcher;

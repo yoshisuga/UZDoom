@@ -86,7 +86,10 @@
 #endif
 
 #if defined(__APPLE__)
+#import "TargetConditionals.h"
+#if !defined(TARGET_OS_IPHONE)
 	#include <OpenGL/OpenGL.h>
+#endif	
 #endif
 
 // This is the number of vec4s make up the light data
