@@ -389,6 +389,14 @@ set( CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} ${REL_C_FLAGS}" )
 set( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${REL_C_FLAGS}" )
 set( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${DEB_C_FLAGS} -D_DEBUG" )
 
+# NDEBUG changes the native function ABI (see VM_ARGS in src/common/scripting/vm/vm.h),
+# so it has to be defined for every target uniformly - hence here, before add_subdirectory.
+option( NO_ASSERTS "Disable assert() in Debug builds" OFF )
+if( NO_ASSERTS )
+	set( CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DNDEBUG" )
+	set( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DNDEBUG" )
+endif()
+
 option(FORCE_INTERNAL_BZIP2 "Use internal bzip2")
 option(FORCE_INTERNAL_ZMUSIC "Use internal zmusic" ON)
 option(FORCE_INTERNAL_ASMJIT "Use internal asmjit" ON)

@@ -444,7 +444,7 @@ struct LauncherView: View {
             #if ZERO
             Text(purchaseModel.isPurchased ? "GenZD" : "GenZD Zero").font(.largeTitle).foregroundColor(.red)
             #else
-            Text("GenZD").font(.largeTitle).foregroundColor(.red)
+            Text("GenZD-UZ").font(.largeTitle).foregroundColor(.red)
             #endif
             Spacer()
           }
