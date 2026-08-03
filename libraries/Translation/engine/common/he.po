@@ -2,311 +2,319 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 1.0\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2026-07-13 23:20-0400\n"
+"Last-Translator: Marcus Minhorst <marcus.minhorst@gmail.com>\n"
+"Language-Team: Hebrew <https://hosted.weblate.org/projects/uzdoom/common/he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : "
-"((n > 10 && n % 10 == 0) ? 2 : 3));\n"
+"Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && n % 10 == 0) ? 2 : 3));\n"
+"X-Generator: python 3.14.6 polib 1.2.0\n"
 
 msgid "PRESSYN"
-msgstr ""
+msgstr "תלחץ על Y או N."
 
 msgid "TXT_YES"
-msgstr ""
+msgstr "כן"
 
 msgid "TXT_NO"
-msgstr ""
+msgstr "לא"
 
 msgid "SAVEDEAD"
 msgstr ""
+"אתה לא יכול לשמור אם אתה לא משחק!\n"
+"\n"
+"תלחץ על כל מקש."
 
 msgid "SAFEMESSAGE"
-msgstr ""
-
-msgid "NOTSET"
-msgstr ""
+msgstr "אתה בטוח שאתה רוצה לעשות את זה?"
 
 msgid "QSPROMPT"
 msgstr ""
+"לשמור מעל המשחק שלך בשם\n"
+"\n"
+"'%s'?\n"
+"\n"
+"תלחץ על Y או N."
 
 msgid "QLPROMPT"
 msgstr ""
+"האת אתה רוצה לטעון את המשחק בשם\n"
+"\n"
+"'%s'?\n"
+"\n"
+"תלחץ על Y או N."
 
 # This is a gender sensitive message where %s represents the player
 msgid "TXT_X_CHEATS"
-msgstr ""
+msgstr "%s מרמה"
 
 msgid "MSGOFF"
-msgstr ""
+msgstr "הודעות: כבוי"
 
 msgid "MSGON"
-msgstr ""
+msgstr "הודעות: פעיל"
 
 msgid "TXT_SAY"
-msgstr ""
+msgstr "להגיד:"
 
 msgid "TXT_QUITENDOOM"
-msgstr ""
+msgstr "תלחץ על כל מקש או על כל מקום על החלונית כדי לצאת."
 
 msgid "NEWSAVE"
-msgstr ""
+msgstr "<משחק חדש>"
 
 msgid "GGSAVED"
-msgstr ""
+msgstr "משחק נשמר."
 
 msgid "SAVECOMMENT_TIME"
-msgstr ""
+msgstr "זמן"
 
 msgid "MNU_LOADGAME"
-msgstr ""
+msgstr "טעינת משחק"
 
 msgid "MNU_SAVEGAME"
-msgstr ""
+msgstr "שמירת משחק"
 
 msgid "MNU_NOPICTURE"
-msgstr ""
+msgstr "אין תמונה"
 
 msgid "MNU_DIFFVERSION"
-msgstr ""
+msgstr "גרסה אחרת"
 
 msgid "MNU_NOFILES"
-msgstr ""
+msgstr "אין קבצים"
 
 msgid "MNU_DELETESG"
-msgstr ""
+msgstr "אתה בטוח שאתה רוצה למחוק את שמירת המשחק?"
 
 msgid "OPTVAL_OFF"
-msgstr ""
+msgstr "כבוי"
 
 msgid "OPTVAL_ON"
-msgstr ""
+msgstr "פעיל"
 
 msgid "OPTVAL_AUTO"
-msgstr ""
+msgstr "אוטומתי"
 
 msgid "OPTMNU_TITLE"
-msgstr ""
+msgstr "הגדרות"
 
 msgid "OPTMNU_CONTROLS"
-msgstr ""
+msgstr "שליטה במשחק"
 
 msgid "OPTMNU_MOUSE"
-msgstr ""
+msgstr "הגדרות עכבר"
 
 msgid "OPTMNU_JOYSTICK"
-msgstr ""
+msgstr "הגדרות שליטה"
 
 msgid "OPTMNU_PLAYER"
-msgstr ""
+msgstr "ארגון שחקן"
 
 msgid "OPTMNU_GAMEPLAY"
-msgstr ""
+msgstr "הגדרות משחק"
 
 msgid "OPTMNU_AUTOMAP"
-msgstr ""
+msgstr "הגדרות מפה אוטומטית"
 
 msgid "OPTMNU_HUD"
-msgstr ""
+msgstr "הגדרות HUD"
 
 msgid "OPTMNU_MISCELLANEOUS"
-msgstr ""
+msgstr "הגדרות אחרות"
 
 msgid "OPTMNU_SOUND"
-msgstr ""
+msgstr "הגדרות צליל"
 
 msgid "OPTMNU_DISPLAY"
-msgstr ""
+msgstr "הגדרות מסך"
 
 msgid "OPTMNU_VIDEO"
-msgstr ""
+msgstr "לבחור מצב וידאו"
 
 msgid "OPTMNU_DEFAULTS"
-msgstr ""
+msgstr "להחזיר לבררת מחדל"
 
 msgid "OPTMNU_RESETTOSAVED"
-msgstr ""
+msgstr "לחזור לשמירה האחרונה"
 
+#, fuzzy
 msgid "OPTMNU_WRITEINI"
-msgstr ""
+msgstr "לשמור הגדרות נוכחות"
 
 msgid "OPTMNU_CONSOLE"
-msgstr ""
+msgstr "להיכנס לקונסולה"
 
 msgid "OPTMNU_NETWORK"
-msgstr ""
+msgstr "הגדרות רשת"
 
 msgid "OPTMNU_REVERB"
 msgstr ""
 
 msgid "CNTRLMNU_SWITCHTEXT1"
-msgstr ""
+msgstr "ENTER כדי לשנות, BACKSPACE כדי למחוק"
 
 msgid "CNTRLMNU_SWITCHTEXT2"
-msgstr ""
+msgstr "תלחץ על מקש חדש בשביל הגדרת שליטה, ESC כדי לבטל"
 
 msgid "CNTRLMNU_CONTROLS"
-msgstr ""
+msgstr "שליטה"
 
 msgid "CNTRLMNU_ATTACK"
-msgstr ""
+msgstr "אש"
 
 msgid "CNTRLMNU_ALTATTACK"
-msgstr ""
+msgstr "אש משני"
 
 msgid "CNTRLMNU_RELOAD"
-msgstr ""
+msgstr "טעינה של נשק"
 
 msgid "CNTRLMNU_USE"
-msgstr ""
+msgstr "להשתמש / לפתוח"
 
 msgid "CNTRLMNU_FORWARD"
-msgstr ""
+msgstr "תזוזה קדימה"
 
 msgid "CNTRLMNU_BACK"
-msgstr ""
+msgstr "תזוזה אחורה"
 
 msgid "CNTRLMNU_MOVELEFT"
-msgstr ""
+msgstr "תזוזה שמאלה"
 
 msgid "CNTRLMNU_MOVERIGHT"
-msgstr ""
+msgstr "תזוזה ימינה"
 
 msgid "CNTRLMNU_TURNLEFT"
-msgstr ""
+msgstr "פניה שמאלה"
 
 msgid "CNTRLMNU_TURNRIGHT"
-msgstr ""
+msgstr "פניה ימינה"
 
 msgid "CNTRLMNU_TURN180"
-msgstr ""
+msgstr "פניה מהירה"
 
 msgid "CNTRLMNU_JUMP"
-msgstr ""
+msgstr "קפיצה"
 
 msgid "CNTRLMNU_CROUCH"
-msgstr ""
+msgstr "להתכופף"
 
 msgid "CNTRLMNU_TOGGLECROUCH"
-msgstr ""
+msgstr "להתכופף/לקום"
 
 msgid "CNTRLMNU_MOUSELOOK"
-msgstr ""
+msgstr "התבוננות עכבר"
 
 # Look doesn't change the aim! It only alters the view pitch
 msgid "CNTRLMNU_LOOKUP"
-msgstr ""
+msgstr "להסתכל למעלה"
 
 msgid "CNTRLMNU_LOOKDOWN"
-msgstr ""
+msgstr "להסתכל למעטה"
 
 msgid "CNTRLMNU_CENTERVIEW"
-msgstr ""
+msgstr "לרכז מבט"
 
 msgid "CNTRLMNU_RUN"
-msgstr ""
+msgstr "לרוץ"
 
 msgid "CNTRLMNU_TOGGLERUN"
-msgstr ""
+msgstr "לרוץ/ללכת"
 
+#, fuzzy
 msgid "CNTRLMNU_STRAFE"
-msgstr ""
+msgstr "תזוזה צידית"
 
 msgid "CNTRLMNU_SCOREBOARD"
-msgstr ""
+msgstr "להראות לוח תוצאות"
 
 msgid "CNTRLMNU_ACTION"
-msgstr ""
+msgstr "פעולה"
 
 msgid "CNTRLMNU_ACTION_TITLE"
-msgstr ""
-
-msgid "CNTRLMNU_CHAT"
-msgstr ""
+msgstr "התאמה אישית של פעולות"
 
 msgid "MNU_MULTIPLAYER"
 msgstr ""
 
 msgid "CNTRLMNU_SAY"
-msgstr ""
-
-msgid "CNTRLMNU_CHAT_TITLE"
-msgstr ""
+msgstr "הודעה"
 
 msgid "CNTRLMNU_WEAPONS_TITLE"
-msgstr ""
+msgstr "התאמה אישית של פעולות נשק"
 
 msgid "CNTRLMNU_INVENTORY_TITLE"
-msgstr ""
+msgstr "התאמה אישית של פעולות מלאי"
 
 msgid "CNTRLMNU_OTHER_TITLE"
-msgstr ""
+msgstr "התאמה אישית של פעולות אחרות"
 
 msgid "CNTRLMNU_WEAPONS"
-msgstr ""
+msgstr "נשקים"
 
 msgid "CNTRLMNU_NEXTWEAPON"
-msgstr ""
+msgstr "נשק הבא"
 
 msgid "CNTRLMNU_PREVIOUSWEAPON"
-msgstr ""
+msgstr "נשק קודם"
 
 # Todo - make game specific
 msgid "CNTRLMNU_SLOT1"
-msgstr ""
+msgstr "נשק 1"
 
 # only show appropriate slots per game
 # 
 msgid "CNTRLMNU_SLOT2"
-msgstr ""
+msgstr "נשק 2"
 
 msgid "CNTRLMNU_SLOT3"
-msgstr ""
+msgstr "נשק 3"
 
 msgid "CNTRLMNU_SLOT4"
-msgstr ""
+msgstr "נשק 4"
 
 msgid "CNTRLMNU_SLOT5"
-msgstr ""
+msgstr "נשק 5"
 
 msgid "CNTRLMNU_SLOT6"
-msgstr ""
+msgstr "נשק 6"
 
 msgid "CNTRLMNU_SLOT7"
-msgstr ""
+msgstr "נשק 7"
 
 msgid "CNTRLMNU_SLOT8"
-msgstr ""
+msgstr "נשק 8"
 
 msgid "CNTRLMNU_SLOT9"
-msgstr ""
+msgstr "נשק 9"
 
 msgid "CNTRLMNU_SLOT0"
-msgstr ""
+msgstr "נשק 10"
 
 msgid "CNTRLMNU_INVENTORY"
-msgstr ""
+msgstr "מלאי"
 
 msgid "CNTRLMNU_USEITEM"
-msgstr ""
+msgstr "להשתמש בפריט"
 
 msgid "CNTRLMNU_USEALLITEMS"
-msgstr ""
+msgstr "להשתמש בכל הפריטים"
 
 msgid "CNTRLMNU_NEXTITEM"
-msgstr ""
+msgstr "פריט הבא"
 
 msgid "CNTRLMNU_PREVIOUSITEM"
-msgstr ""
+msgstr "פריט הקודם"
 
 # most are not used yet but will be
+#, fuzzy
 msgid "MAPCNTRLMNU_TITLE"
-msgstr ""
+msgstr "התאמה אישית של פעולות מפה"
 
 msgid "MAPCNTRLMNU_CONTROLS"
-msgstr ""
+msgstr "פעולות מפה"
 
 msgid "MAPCNTRLMNU_PANLEFT"
 msgstr ""
@@ -350,9 +358,6 @@ msgstr ""
 msgid "CNTRLMNU_SCREENSHOT"
 msgstr ""
 
-msgid "CNTRLMNU_CONSOLE"
-msgstr ""
-
 msgid "CNTRLMNU_PAUSE"
 msgstr ""
 
@@ -390,9 +395,6 @@ msgid "CNTRLMNU_TOGGLE_MESSAGES"
 msgstr ""
 
 msgid "CNTRLMNU_MENU_QUIT"
-msgstr ""
-
-msgid "CNTRLMNU_ADJUST_GAMMA"
 msgstr ""
 
 msgid "MOUSEMNU_ENABLEMOUSE"
@@ -538,13 +540,13 @@ msgid "OPTVAL_NOTINVERTED"
 msgstr ""
 
 msgid "TXT_COLOR_BLUE"
-msgstr ""
+msgstr "כחול"
 
 msgid "TXT_COLOR_RED"
-msgstr ""
+msgstr "אדום"
 
 msgid "TXT_COLOR_GREEN"
-msgstr ""
+msgstr "ירוק"
 
 msgid "TXT_COLOR_GRAY"
 msgstr ""
@@ -574,9 +576,6 @@ msgid "TXT_COLOR_DULLGREEN"
 msgstr ""
 
 msgid "TXT_COLOR_BEIGE"
-msgstr ""
-
-msgid "TXT_COLOR_LIGHTGREEN"
 msgstr ""
 
 msgid "TXT_COLOR_LIGHTBLUE"
@@ -645,22 +644,10 @@ msgstr ""
 msgid "DSPLYMNU_MODELS"
 msgstr ""
 
-msgid "DSPLYMNU_CROSSHAIRSCALE"
-msgstr ""
-
-msgid "DSPLYMNU_SBSCALE"
-msgstr ""
-
-msgid "DSPLYMNU_MESSAGES"
-msgstr ""
-
 msgid "MSGMNU_CENTERMESSAGES"
 msgstr ""
 
 msgid "MSGMNU_PULSEMESSAGES"
-msgstr ""
-
-msgid "MSGMNU_MESSAGESCALE"
 msgstr ""
 
 msgid "MNU_COLORPICKER"
@@ -682,15 +669,6 @@ msgid "MAPCOLORMNU_TITLE"
 msgstr ""
 
 msgid "MAPCOLORMNU_DEFAULTMAPCOLORS"
-msgstr ""
-
-msgid "SNDMNU_SNDENABLED"
-msgstr ""
-
-msgid "SNDMNU_MUSENABLED"
-msgstr ""
-
-msgid "OPTVAL_4000HZ"
 msgstr ""
 
 msgid "OPTVAL_8000HZ"
@@ -789,9 +767,6 @@ msgstr ""
 msgid "SNDMNU_CHANNELS"
 msgstr ""
 
-msgid "SNDMNU_BACKEND"
-msgstr ""
-
 msgid "SNDMNU_OPENAL"
 msgstr ""
 
@@ -805,9 +780,6 @@ msgid "SNDMNU_MODREPLAYER"
 msgstr ""
 
 msgid "SNDMNU_MIDIPLAYER"
-msgstr ""
-
-msgid "SNDMNU_MENUSOUND"
 msgstr ""
 
 msgid "ADVSNDMNU_TITLE"
@@ -838,18 +810,15 @@ msgid "ADVSNDMNU_MIDIVOICES"
 msgstr ""
 
 msgid "ADVSNDMNU_FLUIDSYNTH"
-msgstr ""
+msgstr "FluidSynth"
 
 msgid "ADVSNDMNU_GLOBAL"
 msgstr ""
 
 msgid "ADVSNDMNU_FREEVERB"
-msgstr ""
+msgstr "Freeverb"
 
 msgid "ADVSNDMNU_GLOBAL_FREEVERB"
-msgstr ""
-
-msgid "ADVSNDMNU_FLUIDPATCHSET"
 msgstr ""
 
 msgid "ADVSNDMNU_FLUIDGAIN"
@@ -865,25 +834,16 @@ msgid "ADVSNDMNU_CHORUS"
 msgstr ""
 
 msgid "ADVSNDMNU_TIMIDITY"
-msgstr ""
+msgstr "‭Timidity++‬"
 
 msgid "ADVSNDMNU_ADLMIDI"
-msgstr ""
+msgstr "ADLMidi"
 
 msgid "ADVSNDMNU_OPNMIDI"
-msgstr ""
-
-msgid "ADVSNDMNU_TIMIDITYCONFIG"
-msgstr ""
-
-msgid "ADVSNDMNU_TIMIDITYVOLUME"
-msgstr ""
+msgstr "OPNMidi"
 
 msgid "ADVSNDMNU_WILDMIDI"
-msgstr ""
-
-msgid "ADVSNDMNU_WILDMIDICONFIG"
-msgstr ""
+msgstr "WildMidi"
 
 msgid "ADVSNDMNU_SELCONFIG"
 msgstr ""
@@ -892,9 +852,6 @@ msgid "ADVSNDMNU_ADVRESAMPLING"
 msgstr ""
 
 msgid "ADVSNDMNU_OPLBANK"
-msgstr ""
-
-msgid "ADVSNDMNU_ADLOPLCORES"
 msgstr ""
 
 msgid "ADVSNDMNU_RUNPCMRATE"
@@ -910,9 +867,6 @@ msgid "ADVSNDMNU_OPNCORES"
 msgstr ""
 
 msgid "ADVSNDMNU_GUSEMULATION"
-msgstr ""
-
-msgid "ADVSNDMNU_GUSCONFIG"
 msgstr ""
 
 msgid "ADVSNDMNU_DMXGUS"
@@ -1011,13 +965,13 @@ msgid "MODMNU_VOLUMERAMPING"
 msgstr ""
 
 msgid "OPTVAL_LIBXMP"
-msgstr ""
+msgstr "libXMP"
 
 msgid "OPTVAL_DUMB"
-msgstr ""
+msgstr "Dumb"
 
 msgid "MODMNU_CHIPOMATIC"
-msgstr ""
+msgstr "Chip-o-matic"
 
 msgid "OPTVAL_MAMEOPL2"
 msgstr ""
@@ -1053,9 +1007,6 @@ msgid "OPTVAL_NP2OPNA"
 msgstr ""
 
 msgid "OPTVAL_MAMEOPNA"
-msgstr ""
-
-msgid "OPTVAL_PMDWINOPNA"
 msgstr ""
 
 msgid "OPTVAL_OPALOPL3"
@@ -1170,13 +1121,13 @@ msgid "OPTVAL_1024K"
 msgstr ""
 
 msgid "OPTVAL_UNCHARTED2"
-msgstr ""
+msgstr "Uncharted 2"
 
 msgid "OPTVAL_HEJLDAWSON"
-msgstr ""
+msgstr "Hejl-Dawson"
 
 msgid "OPTVAL_REINHARD"
-msgstr ""
+msgstr "Reinhard"
 
 msgid "OPTVAL_PALETTE"
 msgstr ""
@@ -1298,12 +1249,6 @@ msgstr ""
 msgid "GLTEXMNU_TITLE"
 msgstr ""
 
-msgid "GLTEXMNU_TEXENABLED"
-msgstr ""
-
-msgid "GLTEXMNU_ENABLEHIRES"
-msgstr ""
-
 msgid "GLTEXMNU_HQRESIZE"
 msgstr ""
 
@@ -1331,12 +1276,6 @@ msgstr ""
 msgid "VIDMNU_TITLE"
 msgstr ""
 
-msgid "OPTVAL_SCALENEAREST"
-msgstr ""
-
-msgid "OPTVAL_SCALELINEAR"
-msgstr ""
-
 msgid "OPTVAL_LETTERBOX"
 msgstr ""
 
@@ -1352,16 +1291,10 @@ msgstr ""
 msgid "VIDMNU_HIDPI"
 msgstr ""
 
-msgid "VIDMNU_ASPECTRATIO"
-msgstr ""
-
 msgid "VIDMNU_FORCEASPECT"
 msgstr ""
 
 msgid "VIDMNU_CROPASPECT"
-msgstr ""
-
-msgid "VIDMNU_5X4ASPECTRATIO"
 msgstr ""
 
 msgid "VIDMNU_SCALEMODE"
@@ -1448,14 +1381,14 @@ msgid "VIDMNU_PREFERBACKEND"
 msgstr ""
 
 msgid "OPTVAL_OPENGL"
-msgstr ""
+msgstr "OpenGL"
 
 msgid "OPTVAL_VULKAN"
-msgstr ""
+msgstr "Vulkan"
 
 # Rendering backend
 msgid "OPTVAL_OPENGLES"
-msgstr ""
+msgstr "OpenGL ES"
 
 msgid "MISCMNU_MERGEKEYS"
 msgstr ""
@@ -1496,9 +1429,6 @@ msgstr ""
 msgid "HUDMNU_CROSSHAIRCOLOR"
 msgstr ""
 
-msgid "HUDMNU_CROSSHAIRHEALTH"
-msgstr ""
-
 msgid "HUDMNU_CROSSHAIRSCALE"
 msgstr ""
 
@@ -1525,95 +1455,6 @@ msgid "REVMNU_EDIT"
 msgstr ""
 
 msgid "REVMNU_NEW"
-msgstr ""
-
-msgid "REVMNU_REVERT"
-msgstr ""
-
-# Please translate only if you know how to properly name this technical
-# jargon!
-msgid "REVMNU_ENVIRONMENT_SIZE"
-msgstr ""
-
-msgid "REVMNU_ENVIRONMENT_DIFFUSION"
-msgstr ""
-
-msgid "REVMNU_ROOM"
-msgstr ""
-
-msgid "REVMNU_ROOM_HF"
-msgstr ""
-
-msgid "REVMNU_ROOM_LF"
-msgstr ""
-
-msgid "REVMNU_DECAY_TIME"
-msgstr ""
-
-msgid "REVMNU_DECAY_HF_RATIO"
-msgstr ""
-
-msgid "REVMNU_DECAY_LF_RATIO"
-msgstr ""
-
-msgid "REVMNU_REFLECTIONS"
-msgstr ""
-
-msgid "REVMNU_REFLECTIONS_DELAY"
-msgstr ""
-
-msgid "REVMNU_REFLECTIONS_PAN_X"
-msgstr ""
-
-msgid "REVMNU_REFLECTIONS_PAN_Y"
-msgstr ""
-
-msgid "REVMNU_REFLECTIONS_PAN_Z"
-msgstr ""
-
-msgid "REVMNU_REVERB"
-msgstr ""
-
-msgid "REVMNU_REVERB_DELAY"
-msgstr ""
-
-msgid "REVMNU_REVERB_PAN_X"
-msgstr ""
-
-msgid "REVMNU_REVERB_PAN_Y"
-msgstr ""
-
-msgid "REVMNU_REVERB_PAN_Z"
-msgstr ""
-
-msgid "REVMNU_ECHO_TIME"
-msgstr ""
-
-msgid "REVMNU_ECHO_DEPTH"
-msgstr ""
-
-msgid "REVMNU_MODULATION_TIME"
-msgstr ""
-
-msgid "REVMNU_MODULATION_DEPTH"
-msgstr ""
-
-msgid "REVMNU_AIR_ABSORPTION_HF"
-msgstr ""
-
-msgid "REVMNU_HF_REFERENCE"
-msgstr ""
-
-msgid "REVMNU_LF_REFERENCE"
-msgstr ""
-
-msgid "REVMNU_ROOM_ROLLOFF_FACTOR"
-msgstr ""
-
-msgid "REVMNU_DIFFUSION"
-msgstr ""
-
-msgid "REVMNU_DENSITY"
 msgstr ""
 
 msgid "REVMNU_Reflections_Scale"
@@ -1670,9 +1511,6 @@ msgstr ""
 msgid "VK_TITLE"
 msgstr ""
 
-msgid "VKMNU_ENABLE"
-msgstr ""
-
 msgid "VKMNU_DEVICE"
 msgstr ""
 
@@ -1685,24 +1523,20 @@ msgstr ""
 msgid "VK_RESTART"
 msgstr ""
 
-# This is not yet implemented - but it is planned
-msgid "VKMNU_DEVICESELECT"
-msgstr ""
-
 msgid "OPTVAL_SCALENX"
-msgstr ""
+msgstr "ScaleNx"
 
 msgid "OPTVAL_NORMALNX"
-msgstr ""
+msgstr "NormalNx"
 
 msgid "OPTVAL_HQNX"
-msgstr ""
+msgstr "hqNx"
 
 msgid "OPTVAL_HQNXMMX"
 msgstr ""
 
 msgid "OPTVAL_NXBRZ"
-msgstr ""
+msgstr "xBRZ"
 
 msgid "OPTVAL_OLD_NXBRZ"
 msgstr ""
@@ -1720,128 +1554,6 @@ msgid "OS_NO_RESULTS"
 msgstr ""
 
 msgid "OS_LABEL"
-msgstr ""
-
-msgid "TXT_OBITUARY1"
-msgstr ""
-
-msgid "TXT_OBITUARY2"
-msgstr ""
-
-msgid "TXT_OBITUARY3"
-msgstr ""
-
-msgid "TXT_OBITUARY4"
-msgstr ""
-
-msgid "TXT_OBITUARY5"
-msgstr ""
-
-msgid "TXT_OBITUARY6"
-msgstr ""
-
-msgid "TXT_OBITUARY7"
-msgstr ""
-
-msgid "TXT_OBITUARY8"
-msgstr ""
-
-msgid "TXT_OBITUARY9"
-msgstr ""
-
-msgid "TXT_OBITUARY10"
-msgstr ""
-
-msgid "TXT_OBITUARY11"
-msgstr ""
-
-msgid "TXT_OBITUARY12"
-msgstr ""
-
-msgid "TXT_OBITUARY13"
-msgstr ""
-
-msgid "TXT_OBITUARY14"
-msgstr ""
-
-msgid "TXT_OBITUARY15"
-msgstr ""
-
-msgid "TXT_OBITUARY16"
-msgstr ""
-
-msgid "TXT_OBITUARY17"
-msgstr ""
-
-msgid "TXT_OBITUARY18"
-msgstr ""
-
-msgid "TXT_OBITUARY19"
-msgstr ""
-
-msgid "TXT_OBITUARY20"
-msgstr ""
-
-msgid "TXT_OBITUARY21"
-msgstr ""
-
-msgid "TXT_OBITUARY22"
-msgstr ""
-
-msgid "TXT_OBITUARY23"
-msgstr ""
-
-msgid "TXT_OBITUARY24"
-msgstr ""
-
-msgid "TXT_OBITUARY25"
-msgstr ""
-
-msgid "TXT_OBITUARY26"
-msgstr ""
-
-msgid "TXT_OBITUARY27"
-msgstr ""
-
-msgid "TXT_OBITUARY28"
-msgstr ""
-
-msgid "TXT_OBITUARY29"
-msgstr ""
-
-msgid "TXT_OBITUARY30"
-msgstr ""
-
-msgid "TXT_OBITUARY31"
-msgstr ""
-
-msgid "TXT_SELFOBIT1"
-msgstr ""
-
-msgid "TXT_SELFOBIT2"
-msgstr ""
-
-msgid "TXT_SELFOBIT3"
-msgstr ""
-
-msgid "TXT_SELFOBIT4"
-msgstr ""
-
-msgid "TXT_SELFOBIT5"
-msgstr ""
-
-msgid "TXT_SELFOBIT6"
-msgstr ""
-
-# This is not a text to be translated but an engine switch for complex
-# languages.
-msgid "USE_GENERIC_FONT"
-msgstr ""
-
-# This should list all uppercase characters that are REQUIRED for proper
-# language display. If it is acceptable that accents get omitted a character
-# should NOT be listed here!
-msgid "REQUIRED_CHARACTERS"
 msgstr ""
 
 msgid "OPTMNU_FULLOPTIONS"
@@ -1868,40 +1580,10 @@ msgstr ""
 msgid "TXT_UNKNOWN"
 msgstr ""
 
-msgid "OPTVAL_HUD"
-msgstr ""
-
-msgid "OPTVAL_AUTOMAP"
-msgstr ""
-
-msgid "OPTVAL_HUDANDMAP"
-msgstr ""
-
 msgid "TXT_SAVEGAMENEEDS"
 msgstr ""
 
-msgid "OPTMNU_MULTIPLAYER"
-msgstr ""
-
-msgid "OPTMNU_INPUT"
-msgstr ""
-
-msgid "OPTMNU_SYSTEM"
-msgstr ""
-
-msgid "OPTMNU_LIGHT"
-msgstr ""
-
-msgid "OPTMNU_SPRITE"
-msgstr ""
-
 msgid "GLPREFMNU_CORONAS"
-msgstr ""
-
-msgid "DSPLYMNU_APPEARANCE"
-msgstr ""
-
-msgid "DSPLYMNU_ADVANCED"
 msgstr ""
 
 msgid "PICKER_SELECT"
@@ -1917,9 +1599,6 @@ msgid "PICKER_GENERAL"
 msgstr ""
 
 msgid "PICKER_EXTRA"
-msgstr ""
-
-msgid "PICKER_FULLSCREEN"
 msgstr ""
 
 msgid "PICKER_NOAUTOLOAD"
@@ -2008,21 +1687,6 @@ msgstr ""
 msgid "PICKER_JOIN"
 msgstr ""
 
-msgid "PICKER_NETMODE"
-msgstr ""
-
-msgid "PICKER_NETAUTO"
-msgstr ""
-
-# Connections are routed through the host instead of all players connecting to
-# each other individually.
-msgid "PICKER_NETSERVER"
-msgstr ""
-
-# Players connect to each other individually.
-msgid "PICKER_NETPEER"
-msgstr ""
-
 msgid "PICKER_NETRATE"
 msgstr ""
 
@@ -2089,3 +1753,6 @@ msgstr ""
 
 msgid "JOYMNU_ANALOGSTRAFERUN"
 msgstr ""
+
+msgid "ACCMNU_TITLE"
+msgstr "הגדרות נגישות"

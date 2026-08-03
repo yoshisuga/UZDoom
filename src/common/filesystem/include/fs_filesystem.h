@@ -28,7 +28,7 @@
 #include "resourcefile.h"
 
 namespace FileSys {
-	
+
 union LumpShortName
 {
 	char		String[9];
@@ -42,6 +42,13 @@ struct FolderEntry
 {
 	const char *name;
 	unsigned lumpnum;
+};
+
+struct ResourceName
+{
+	std::string Name;
+	bool bOptional;
+	ResourceName(std::string& name, bool optional) : Name(name), bOptional(optional) {}
 };
 
 class FileSystem
@@ -58,8 +65,8 @@ public:
 	void SetMaxIwadNum(int x) { MaxIwadIndex = x; }
 
 	bool InitSingleFile(const char *filename, FileSystemMessageFunc Printf = nullptr);
-	bool InitMultipleFiles (std::vector<std::string>& filenames, LumpFilterInfo* filter = nullptr, FileSystemMessageFunc Printf = nullptr, bool allowduplicates = false);
-	void AddFile (const char *filename, FileReader *wadinfo, LumpFilterInfo* filter, FileSystemMessageFunc Printf);
+	bool InitMultipleFiles (std::vector<ResourceName>& filenames, LumpFilterInfo* filter = nullptr, FileSystemMessageFunc Printf = nullptr, bool allowduplicates = false);
+	void AddFile (const char *filename, FileReader *wadinfo, LumpFilterInfo* filter, FileSystemMessageFunc Printf, bool optional);
 	int CheckIfResourceFileLoaded (const char *name) noexcept;
 	void AddAdditionalFile(const char* filename, FileReader* wadinfo = NULL) {}
 
@@ -68,7 +75,7 @@ public:
 
 	int GetFirstEntry(int wadnum) const noexcept;
 	int GetLastEntry(int wadnum) const noexcept;
-    int GetEntryCount(int wadnum) const noexcept;
+	int GetEntryCount(int wadnum) const noexcept;
 
 	int CheckNumForName (const char *name, int namespc) const;
 	int CheckNumForName (const char *name, int namespc, int wadfile, bool exact = true) const;
@@ -136,7 +143,7 @@ public:
 	static uint32_t LumpNameHash (const char *name);		// [RH] Create hash key from an 8-char name
 
 	ptrdiff_t FileLength (int lump) const;
-  uint32_t FileHash (int lump) const;
+	uint32_t FileHash (int lump) const;
 	int GetFileFlags (int lump);					// Return the flags for this lump
 	const char* GetFileShortName(int lump) const;
 	const char *GetFileFullName (int lump, bool returnshort = true) const;	// [RH] Returns the lump's full name
@@ -146,6 +153,7 @@ public:
 	void SetFileNamespace(int lump, int ns);
 	int GetResourceId(int lump) const;				// Returns the RFF index number for this lump
 	const char* GetResourceType(int lump) const;
+	const char* GetResourceHash(int wadNum) const;
 	bool CheckFileName (int lump, const char *name) const;	// [RH] Returns true if the names match
 	unsigned GetFilesInFolder(const char *path, std::vector<FolderEntry> &result, bool atomic) const;
 
@@ -157,6 +165,11 @@ public:
 	int GetNumWads() const
 	{
 		return (int)Files.size();
+	}
+
+	bool IsOptionalResource(int wadnum) const
+	{
+		return (size_t)wadnum < Files.size() ? Files[wadnum]->IsOptional() : true;
 	}
 
 	int AddFromBuffer(const char* name, char* data, int size, int id, int flags);

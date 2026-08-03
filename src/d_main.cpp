@@ -48,7 +48,7 @@
 #include "c_dispatch.h"
 #include "cmdlib.h"
 #include "common/scripting/dap/DebugServer.h"
-#include "common/widgets/errorwindow.h"
+#include "widgets/errorwindow.h"
 #include "d_buttons.h"
 #include "d_dehacked.h"
 #include "d_event.h"
@@ -202,7 +202,7 @@ FARG(file, "Loading", "Loads one or more custom PWAD files.", "file1[.wad] file2
 	" file3.wad will work just as well as " GAMENAMELOWERCASE " -file file1.wad file2.wad"
 	" file3.wad.");
 FARG_ADVANCED(optfile, "Loading", "file1[.wad] file2[.wad] ...",
-	"Same as -file, but it will ignore missing files");
+	"Same as -file, but it will ignore missing files and not check them over the net for multiplayer games");
 FARG(noautoload, "Loading", "Prevents loading files automatically from config.", "",
 	"Prevents files from being autoloaded based on the \"AutoLoad\" sections in the user's"
 	" configuration file. This flag also disables autoloading of zvox.wad and the skins directory."
@@ -284,6 +284,9 @@ FARG(nointro, "Loading", "Skips intro video", "",
 FARG(episode, "Loading", "Starts the game on the first map of an episode", "1",
 	"Like -warp, bu starts the game on the first map of the specified episode");
 
+FARG(showlauncher, "Launcher", "Forces the startup launcher to show, even if disabled through other means.", "",
+	"Forces the startup launcher to show, even if disabled through other means.");
+
 FARG(version, "Other", "Print version", "",
 	"Print version and exit.");
 FARG_ADVANCED(v, "Other", "",
@@ -354,7 +357,6 @@ void M_SaveDefaultsFinal();
 void R_Shutdown();
 void I_ShutdownInput();
 void SetConsoleNotifyBuffer();
-void I_UpdateDiscordPresence(bool SendPresence, const char* curstatus, const char* appid, const char* steamappid);
 bool M_SetSpecialMenu(FName& menu, int param);	// game specific checks
 
 const FIWADInfo *D_FindIWAD(TArray<FString> &wadfiles, const char *iwad, const char *basewad);
@@ -469,7 +471,10 @@ CUSTOM_CVAR (Int, fraglimit, 0, CVAR_SERVERINFO)
 }
 
 CVAR (Float, timelimit, 0.f, CVAR_SERVERINFO);
-CVAR (Int, wipetype, 1, CVAR_ARCHIVE);
+CUSTOM_CVAR (Int, wipetype, 1, CVAR_ARCHIVE)
+{
+	if (self < wipe_None || self >= wipe_NUMWIPES) self = wipe_Melt;
+}
 CVAR (Int, snd_drawoutput, 0, 0);
 CUSTOM_CVAR (String, vid_cursor, "None", CVAR_ARCHIVE | CVAR_NOINITCALL)
 {
@@ -492,16 +497,19 @@ CUSTOM_CVAR (String, vid_cursor, "None", CVAR_ARCHIVE | CVAR_NOINITCALL)
 
 // Controlled by startup dialog
 CVAR(Bool, disableautoload, false, CVAR_ARCHIVE | CVAR_NOINITCALL | CVAR_GLOBALCONFIG)
-CVAR(Bool, autoloadbrightmaps, false, CVAR_ARCHIVE | CVAR_NOINITCALL | CVAR_GLOBALCONFIG)
-CVAR(Bool, autoloadlights, false, CVAR_ARCHIVE | CVAR_NOINITCALL | CVAR_GLOBALCONFIG)
+CVAR(Bool, autoloadbrightmaps, true, CVAR_ARCHIVE | CVAR_NOINITCALL | CVAR_GLOBALCONFIG)
+CVAR(Bool, autoloadlights, true, CVAR_ARCHIVE | CVAR_NOINITCALL | CVAR_GLOBALCONFIG)
 CVAR(Bool, autoloadwidescreen, true, CVAR_ARCHIVE | CVAR_NOINITCALL | CVAR_GLOBALCONFIG)
 CVAR(Bool, r_debug_disable_vis_filter, false, 0)
 CVAR(Int, vid_showpalette, 0, 0)
 
+/*
 CUSTOM_CVAR (Bool, i_discordrpc, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 {
 	I_UpdateWindowTitle();
 }
+*/
+
 CUSTOM_CVAR(Int, I_FriendlyWindowTitle, 1, CVAR_GLOBALCONFIG|CVAR_ARCHIVE|CVAR_NOINITCALL)
 {
 	I_UpdateWindowTitle();
@@ -600,7 +608,7 @@ void D_Render(std::function<void()> action, bool interpolate)
 	for (auto Level : AllLevels())
 	{
 		// Check for the presence of dynamic lights at the start of the frame once.
-		if ((gl_lights && vid_rendermode == 4) || (r_dynlights && vid_rendermode != 4) || Level->LightProbes.Size() > 0)
+		if (r_dynlights || Level->LightProbes.Size() > 0)
 		{
 			Level->HasDynamicLights = Level->lights || Level->LightProbes.Size() > 0;
 		}
@@ -822,7 +830,7 @@ CUSTOM_CVAR(Int, compatmode, 0, CVAR_ARCHIVE|CVAR_NOINITCALL)
 		v = COMPATF_SHORTTEX | COMPATF_STAIRINDEX | COMPATF_USEBLOCKING | COMPATF_NODOORLIGHT | COMPATF_SPRITESORT |
 			COMPATF_TRACE | COMPATF_MISSILECLIP | COMPATF_SOUNDTARGET | COMPATF_DEHHEALTH | COMPATF_CROSSDROPOFF |
 			COMPATF_LIGHT | COMPATF_MASKEDMIDTEX;
-		w = COMPATF2_FLOORMOVE | COMPATF2_EXPLODE1 | COMPATF2_NOMBF21;
+		w = COMPATF2_FLOORMOVE | COMPATF2_EXPLODE1 | COMPATF2_RESERVEDLINEFLAG;
 		break;
 
 	case 2:	// same as 1 but stricter (NO_PASSMOBJ and INVISIBILITY are also set)
@@ -830,49 +838,54 @@ CUSTOM_CVAR(Int, compatmode, 0, CVAR_ARCHIVE|CVAR_NOINITCALL)
 			COMPATF_TRACE | COMPATF_MISSILECLIP | COMPATF_SOUNDTARGET | COMPATF_NO_PASSMOBJ | COMPATF_LIMITPAIN |
 			COMPATF_DEHHEALTH | COMPATF_INVISIBILITY | COMPATF_CROSSDROPOFF | COMPATF_VILEGHOSTS | COMPATF_HITSCAN |
 			COMPATF_WALLRUN | COMPATF_NOTOSSDROPS | COMPATF_LIGHT | COMPATF_MASKEDMIDTEX;
-		w = COMPATF2_BADANGLES | COMPATF2_FLOORMOVE | COMPATF2_POINTONLINE | COMPATF2_EXPLODE2 | COMPATF2_NOMBF21 | COMPATF2_VOODOO_ZOMBIES;
+		w = COMPATF2_BADANGLES | COMPATF2_FLOORMOVE | COMPATF2_POINTONLINE | COMPATF2_EXPLODE2 | COMPATF2_VOODOO_ZOMBIES |
+			COMPATF2_EMULATEMIKOPORTALS  | COMPATF2_RESERVEDLINEFLAG;
 		break;
 
 	case 3: // Boom compat mode
 		v = COMPATF_TRACE|COMPATF_SOUNDTARGET|COMPATF_BOOMSCROLL|COMPATF_MISSILECLIP|COMPATF_MASKEDMIDTEX;
-		w = COMPATF2_EXPLODE1 | COMPATF2_NOMBF21;
+		w = COMPATF2_EXPLODE1 | COMPATF2_RESERVEDLINEFLAG | COMPATF2_TRANSFERSECRET;
 		break;
 
 	case 4: // Old ZDoom compat mode
 		v = COMPATF_SOUNDTARGET | COMPATF_LIGHT;
-		w = COMPATF2_MULTIEXIT | COMPATF2_TELEPORT | COMPATF2_PUSHWINDOW | COMPATF2_CHECKSWITCHRANGE | COMPATF2_NOMBF21;
+		w = COMPATF2_MULTIEXIT | COMPATF2_TELEPORT | COMPATF2_PUSHWINDOW | COMPATF2_CHECKSWITCHRANGE |
+		    COMPATF2_RESERVEDLINEFLAG | COMPATF2_TRANSFERSECRET;
 		break;
 
 	case 5: // MBF compat mode
 		v = COMPATF_TRACE | COMPATF_SOUNDTARGET | COMPATF_BOOMSCROLL | COMPATF_MISSILECLIP | COMPATF_MUSHROOM |
 			COMPATF_MBFMONSTERMOVE | COMPATF_NOBLOCKFRIENDS | COMPATF_MASKEDMIDTEX;
-		w = COMPATF2_EXPLODE1 | COMPATF2_AVOID_HAZARDS | COMPATF2_STAYONLIFT | COMPATF2_NOMBF21;
+		w = COMPATF2_EXPLODE1 | COMPATF2_AVOID_HAZARDS | COMPATF2_STAYONLIFT | COMPATF2_RESERVEDLINEFLAG;
 		break;
 
 	case 6:	// Boom with some added settings to reenable some 'broken' behavior
 		v = COMPATF_TRACE | COMPATF_SOUNDTARGET | COMPATF_BOOMSCROLL | COMPATF_MISSILECLIP | COMPATF_NO_PASSMOBJ |
 			COMPATF_INVISIBILITY | COMPATF_HITSCAN | COMPATF_WALLRUN | COMPATF_NOTOSSDROPS | COMPATF_MASKEDMIDTEX;
-		w = COMPATF2_POINTONLINE | COMPATF2_EXPLODE2 | COMPATF2_NOMBF21;
+		w = COMPATF2_POINTONLINE | COMPATF2_EXPLODE2 | COMPATF2_EMULATEMIKOPORTALS | COMPATF2_RESERVEDLINEFLAG |
+		    COMPATF2_TRANSFERSECRET;
 		break;
 
 	case 7: // Stricter MBF compatibility
 		v = COMPATF_NOBLOCKFRIENDS | COMPATF_MBFMONSTERMOVE | COMPATF_INVISIBILITY |
 			COMPATF_NOTOSSDROPS | COMPATF_MUSHROOM | COMPATF_NO_PASSMOBJ | COMPATF_BOOMSCROLL | COMPATF_WALLRUN |
 			COMPATF_TRACE | COMPATF_HITSCAN | COMPATF_MISSILECLIP | COMPATF_MASKEDMIDTEX | COMPATF_SOUNDTARGET;
-		w = COMPATF2_POINTONLINE | COMPATF2_EXPLODE1 | COMPATF2_EXPLODE2 | COMPATF2_AVOID_HAZARDS | COMPATF2_STAYONLIFT | COMPATF2_NOMBF21;
+		w = COMPATF2_POINTONLINE | COMPATF2_EXPLODE1 | COMPATF2_EXPLODE2 | COMPATF2_AVOID_HAZARDS | COMPATF2_STAYONLIFT |
+			COMPATF2_RESERVEDLINEFLAG | COMPATF2_TRANSFERSECRET;
 		break;
 
 	case 8: // MBF21 compat mode
 		v = COMPATF_TRACE | COMPATF_SOUNDTARGET | COMPATF_BOOMSCROLL | COMPATF_MISSILECLIP | COMPATF_CROSSDROPOFF |
 			COMPATF_MUSHROOM | COMPATF_MBFMONSTERMOVE | COMPATF_NOBLOCKFRIENDS | COMPATF_MASKEDMIDTEX;
-		w = COMPATF2_EXPLODE1 | COMPATF2_AVOID_HAZARDS | COMPATF2_STAYONLIFT;
+		w = COMPATF2_EXPLODE1 | COMPATF2_AVOID_HAZARDS | COMPATF2_STAYONLIFT | COMPATF2_RESERVEDLINEFLAG |
+		    COMPATF2_TRANSFERSECRET;
 		break;
 
 	case 9: // Stricter MBF21 compatibility
 		v = COMPATF_NOBLOCKFRIENDS | COMPATF_MBFMONSTERMOVE | COMPATF_INVISIBILITY |
 			COMPATF_NOTOSSDROPS | COMPATF_MUSHROOM | COMPATF_NO_PASSMOBJ | COMPATF_BOOMSCROLL | COMPATF_WALLRUN |
 			COMPATF_TRACE | COMPATF_HITSCAN | COMPATF_MISSILECLIP | COMPATF_CROSSDROPOFF | COMPATF_MASKEDMIDTEX | COMPATF_SOUNDTARGET;
-		w = COMPATF2_POINTONLINE | COMPATF2_EXPLODE1 | COMPATF2_EXPLODE2 | COMPATF2_AVOID_HAZARDS | COMPATF2_STAYONLIFT;
+		w = COMPATF2_POINTONLINE | COMPATF2_EXPLODE1 | COMPATF2_EXPLODE2 | COMPATF2_AVOID_HAZARDS | COMPATF2_STAYONLIFT | COMPATF2_RESERVEDLINEFLAG | COMPATF2_EMULATEMIKOPORTALS | COMPATF2_TRANSFERSECRET;
 		break;
 	}
 	compatflags = v;
@@ -924,10 +937,12 @@ CVAR (Flag, compat_explode2,			compatflags2, COMPATF2_EXPLODE2);
 CVAR (Flag, compat_railing,				compatflags2, COMPATF2_RAILING);
 CVAR (Flag, compat_avoidhazard,			compatflags2, COMPATF2_AVOID_HAZARDS);
 CVAR (Flag, compat_stayonlift,			compatflags2, COMPATF2_STAYONLIFT);
-CVAR (Flag, compat_nombf21,				compatflags2, COMPATF2_NOMBF21);
+CVAR (Flag, compat_reservedlineflag,	compatflags2, COMPATF2_RESERVEDLINEFLAG);
 CVAR (Flag, compat_voodoozombies,		compatflags2, COMPATF2_VOODOO_ZOMBIES);
 CVAR (Flag, compat_fdteleport,			compatflags2, COMPATF2_FDTELEPORT);
 CVAR (Flag, compat_novdolllockmsg,		compatflags2, COMPATF2_NOVDOLLLOCKMSG);
+CVAR (Flag, compat_emulatemikoportals,	compatflags2, COMPATF2_EMULATEMIKOPORTALS);
+CVAR (Flag, compat_transfersecret,		compatflags2, COMPATF2_TRANSFERSECRET);
 
 CVAR(Bool, vid_activeinbackground, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
@@ -1109,8 +1124,8 @@ void D_Display ()
 
 	if (nodrawers || screen == NULL)
 		return; 				// for comparative timing / profiling
-	
-	if (!AppActive && !setmodeneeded && (screen->IsFullscreen() || !vid_activeinbackground))
+
+	if (!AppActive && !setmodeneeded && !vid_activeinbackground)
 	{
 		return;
 	}
@@ -1120,6 +1135,7 @@ void D_Display ()
 	cycles.Reset();
 	cycles.Clock();
 
+	r_UseVanillaTransparency = UseVanillaTransparency(); // [SP] Cache UseVanillaTransparency() call
 	r_renderercaps = GetCaps(); // [SP] Get the current capabilities of the renderer
 
 	if (players[consoleplayer].camera == NULL)
@@ -1127,7 +1143,7 @@ void D_Display ()
 		players[consoleplayer].camera = players[consoleplayer].mo;
 	}
 
-    auto &vp = r_viewpoint;
+	auto &vp = r_viewpoint;
 	if (viewactive)
 	{
 		DAngle fov = DAngle::fromDeg(90.);
@@ -1472,7 +1488,7 @@ void D_DoomLoop ()
 		{
 			if (error.GetMessage ())
 			{
-				Printf (PRINT_NONOTIFY | PRINT_BOLD, "\n%s\n", error.GetMessage());
+				Printf (static_cast<PrintFlag>(PRINT_NONOTIFY | PRINT_BOLD), "\n%s\n", error.GetMessage());
 			}
 			D_ErrorCleanup ();
 		}
@@ -1480,14 +1496,14 @@ void D_DoomLoop ()
 		{
 			if (error.what())
 			{
-				Printf(PRINT_NONOTIFY | PRINT_BOLD, "\n%s\n", error.what());
+				Printf(static_cast<PrintFlag>(PRINT_NONOTIFY | PRINT_BOLD), "\n%s\n", error.what());
 			}
 			D_ErrorCleanup();
 		}
 		catch (CVMAbortException &error)
 		{
 			error.MaybePrintMessage();
-			Printf(PRINT_NONOTIFY | PRINT_BOLD, "%s", error.stacktrace.GetChars());
+			Printf(static_cast<PrintFlag>(PRINT_NONOTIFY | PRINT_BOLD), "%s", error.stacktrace.GetChars());
 			D_ErrorCleanup();
 		}
 	}
@@ -2018,7 +2034,7 @@ FExecList *D_MultiExec (FArgs *list, FExecList *exec)
 	return exec;
 }
 
-static void GetCmdLineFiles(std::vector<std::string>& wadfiles, bool optional)
+static void GetCmdLineFiles(std::vector<FileSys::ResourceName>& wadfiles, bool optional)
 {
 	FString *args;
 	int i;
@@ -2032,11 +2048,20 @@ static void GetCmdLineFiles(std::vector<std::string>& wadfiles, bool optional)
 	// ones we added earlier.
 	for (i = optional ? 0 : int(wadfiles.size()); i < argc; ++i)
 	{
+		// Since optfiles shouldn't trigger the check but must still not be marked as optional
+		// for online purposes, any newly added files will need to be forcefully set to non-optional
+		// for the time being.
+		const size_t s = wadfiles.size();
 		D_AddWildFile(wadfiles, args[i].GetChars(), ".wad", GameConfig, optional);
+		if (wadfiles.size() > s)
+		{
+			for (size_t j = 0u; j < wadfiles.size() - s; ++j)
+				wadfiles[s + j].bOptional = false;
+		}
 	}
 }
 
-static FString ParseGameInfo(std::vector<std::string> &pwads, const char *fn, const char *data, int size)
+static FString ParseGameInfo(std::vector<FileSys::ResourceName> &pwads, const char *fn, const char *data, int size)
 {
 	FScanner sc;
 	FString iwad;
@@ -2045,7 +2070,7 @@ static FString ParseGameInfo(std::vector<std::string> &pwads, const char *fn, co
 
 	const char *lastSlash = strrchr (fn, '/');
 	if (lastSlash == NULL)
-	    lastSlash = strrchr (fn, ':');
+		lastSlash = strrchr (fn, ':');
 
 	sc.OpenMem("GAMEINFO", data, size);
 	while(sc.GetToken())
@@ -2053,7 +2078,7 @@ static FString ParseGameInfo(std::vector<std::string> &pwads, const char *fn, co
 		sc.TokenMustBe(TK_Identifier);
 		FString nextKey = sc.String;
 		sc.MustGetToken('=');
-		if (!nextKey.CompareNoCase("IWAD"))
+		if (!nextKey.CompareNoCase("IWAD") && !Args->CheckParm(FArg_showlauncher))
 		{
 			sc.MustGetString();
 			iwad = sc.String;
@@ -2078,11 +2103,11 @@ static FString ParseGameInfo(std::vector<std::string> &pwads, const char *fn, co
 				}
 				if (!DirEntryExists(checkpath.GetChars(), &isDir))
 				{
-					pos += D_AddFile(pwads, sc.String, true, pos, GameConfig);
+					pos += D_AddFile(pwads, sc.String, true, pos, GameConfig, false);
 				}
 				else
 				{
-					pos += D_AddFile(pwads, checkpath.GetChars(), true, pos, GameConfig);
+					pos += D_AddFile(pwads, checkpath.GetChars(), true, pos, GameConfig, false);
 				}
 			}
 			while (sc.CheckToken(','));
@@ -2140,9 +2165,9 @@ static FString ParseGameInfo(std::vector<std::string> &pwads, const char *fn, co
 			GameStartupInfo.LoadWidescreen = !!sc.Number;
 		}
 		else if (!nextKey.CompareNoCase("DISCORDAPPID"))
-		{
+		{ // TODO readd discordrpc with better library
 			sc.MustGetString();
-			GameStartupInfo.DiscordAppId = sc.String;
+			//GameStartupInfo.DiscordAppId = sc.String;
 		}
 		else if (!nextKey.CompareNoCase("STEAMAPPID"))
 		{
@@ -2170,7 +2195,7 @@ void GetReserved(LumpFilterInfo& lfi)
 	lfi.blockednames = { "*.bat", "*.exe", "__macosx/*", "*/__macosx/*", "*~" };
 }
 
-static FString CheckGameInfo(std::vector<std::string> & pwads)
+static FString CheckGameInfo(std::vector<FileSys::ResourceName>& pwads)
 {
 	FileSystem check;
 
@@ -2238,7 +2263,7 @@ static void D_DoomInit()
 //
 //==========================================================================
 
-static void AddAutoloadFiles(const char *autoname, std::vector<std::string>& allwads)
+static void AddAutoloadFiles(const char *autoname, std::vector<FileSys::ResourceName>& allwads)
 {
 	LumpFilterIWAD.Format("%s.", autoname);	// The '.' is appened to simplify parsing the string
 
@@ -2295,9 +2320,9 @@ static void AddAutoloadFiles(const char *autoname, std::vector<std::string>& all
 		D_AddDirectory (allwads, file.GetChars(), "*.wad", GameConfig, true);
 
 #ifdef __unix__
-		FString skinDir = FStringf("%s/games/" GAMENAMELOWERCASE "/skins", GetDataPath());
+		FString skinDir = FStringf("%s/skins", M_GetAppDataPath(true).GetChars());
 		file = NicePath(skinDir.GetChars());
-		D_AddDirectory (allwads, file.GetChars(), "*.wad", GameConfig);
+		D_AddDirectory (allwads, file.GetChars(), "*.wad", GameConfig, true);
 #endif
 
 		// Add common (global) wads
@@ -2422,7 +2447,7 @@ static void CheckCmdLine()
 
 	if (devparm)
 	{
-		Printf ("%s", GStrings.GetString("D_DEVSTR"));
+		Printf ("%s\n", GStrings.GetString("D_DEVSTR"));
 	}
 
 	// turbo option  // [RH] (now a cvar)
@@ -2499,10 +2524,13 @@ static void CheckEpisodeCmd()
 
 static void CheckDefaultSkill()
 {
-	// Change skill cvar default to this game's defaultskill
-	UCVarValue val;
-	val.Int = DefaultSkill;
-	gameskill->SetGenericRepDefault(val, CVAR_Int);
+	if (DefaultSkill >= 0)
+	{
+		// Change skill cvar default to this game's defaultskill
+		UCVarValue val;
+		val.Int = DefaultSkill;
+		gameskill->SetGenericRepDefault(val, CVAR_Int);
+	}
 
 	if (setskill >= 0)
 	{
@@ -2513,7 +2541,7 @@ static void CheckDefaultSkill()
 
 static void NewFailure ()
 {
-    I_FatalError ("Failed to allocate memory from system heap");
+	I_FatalError ("Failed to allocate memory from system heap");
 }
 
 //==========================================================================
@@ -3286,6 +3314,8 @@ static void Doom_CastSpriteIDToString(FString* a, unsigned int b)
 
 extern DThinker* NextToThink;
 
+void P_MarkRollbackObjects();
+
 static void GC_MarkGameRoots()
 {
 	GC::Mark(staticEventManager.FirstEventHandler);
@@ -3302,6 +3332,7 @@ static void GC_MarkGameRoots()
 
 	// NextToThink must not be freed while thinkers are ticking.
 	GC::Mark(NextToThink);
+	P_MarkRollbackObjects();
 }
 
 static void System_ToggleFullConsole()
@@ -3389,7 +3420,7 @@ static int FileSystemPrintf(FSMessageLevel level, const char* fmt, ...)
 //
 //==========================================================================
 
-static int D_InitGame(const FIWADInfo* iwad_info, std::vector<std::string>& allwads, std::vector<std::string>& pwads)
+static int D_InitGame(const FIWADInfo* iwad_info, std::vector<FileSys::ResourceName>& allwads, std::vector<FileSys::ResourceName>& pwads)
 {
 	NetworkEntityManager::InitializeNetworkEntities();
 
@@ -3541,9 +3572,6 @@ static int D_InitGame(const FIWADInfo* iwad_info, std::vector<std::string>& allw
 		exec = NULL;
 	}
 
-	if (!(restart || norun))
-		V_Init2();
-
 	// [RH] Initialize localizable strings.
 	GStrings.LoadStrings(fileSystem, language);
 
@@ -3565,23 +3593,8 @@ static int D_InitGame(const FIWADInfo* iwad_info, std::vector<std::string>& allw
 
 	TexMan.Init();
 
-	if (!(batchrun || norun)) Printf ("V_Init: allocate screen.\n");
-	if (!(restart || norun))
-	{
-		screen->CompileNextShader();
-	}
-	else if(!norun)
-	{
-		// Update screen palette when restarting
-		screen->UpdatePalette();
-	}
-
 	// Base systems have been inited; enable cvar callbacks
 	FBaseCVar::EnableCallbacks ();
-
-	StartScreen = nostartscreen? nullptr : GetGameStartScreen(per_shader_progress > 0 ? max_progress * 10 / 9 : max_progress + 3);
-	setmodeneeded = true;
-	if (StartScreen != nullptr) StartScreen->Render();
 
 	// +compatmode cannot be used on the command line, so use this as a substitute
 	auto compatmodeval = Args->CheckValue(FArg_compatmode);
@@ -3779,6 +3792,45 @@ static int D_InitGame(const FIWADInfo* iwad_info, std::vector<std::string>& allw
 	// [RH] Lock any cvars that should be locked now that we're
 	// about to begin the game.
 	FBaseCVar::EnableNoSet ();
+
+	// [Sal] FIXME: The window used to be created much earlier.
+	//
+	// This makes more sense for the loading screen, but makes no sense
+	// for the netgame lobby. The lobby creates its own window, and takes
+	// up the main thread. This causes issues that range from annoying
+	// (like a black, uninteractable box in the background when playing
+	// a netgame), to destructive (like the GL context being clobbered
+	// on Linux and causing the game to crash).
+	//
+	// The solution for now is to simply create the window extremely late.
+	// This undoes most of the loading screen code, but improves stability
+	// in every other aspect.
+	//
+	// Since all of the loading screen code constantly checks for null,
+	// I've left it as is so it can be reused as a reference when it
+	// gets overhauled. There's some potential ways we could re-introduce
+	// the loading screen, but they all will be easier if we move away
+	// from ZWidgets first. (Either introducing a separate loading bar
+	// window, or see if we aren't using initializing OpenGL for the
+	// replacement widget framework, or clean up the code to handle
+	// swapping between multiple GL contexts)
+	if (!(restart || norun))
+		V_Init2();
+
+	if (!(batchrun || norun)) Printf ("V_Init: allocate screen.\n");
+	if (!(restart || norun))
+	{
+		screen->CompileNextShader();
+	}
+	else if(!norun)
+	{
+		// Update screen palette when restarting
+		screen->UpdatePalette();
+	}
+
+	StartScreen = nostartscreen? nullptr : GetGameStartScreen(per_shader_progress > 0 ? max_progress * 10 / 9 : max_progress + 3);
+	setmodeneeded = true;
+	if (StartScreen != nullptr) StartScreen->Render();
 
 	if (norun || batchrun)
 	{
@@ -3989,11 +4041,10 @@ static int D_DoomMain_Internal (void)
 	C_InitConsole(80*8, 25*8, false);
 
 	Printf(
-		"%s version %s\nBuild: %s version compiled on %s, dated %s\nOS: %s\n",
+		"%s version %s\nBuild: %s dated %s\nOS: %s\n",
 		GAMENAME,
 		GetVersionString(),
 		BACKEND,
-		__DATE__,
 		GetGitTime(),
 		I_DetectOS().GetChars()
 	);
@@ -4070,7 +4121,7 @@ static int D_DoomMain_Internal (void)
 		// Load zdoom.pk3 alone so that we can get access to the internal gameinfos before
 		// the IWAD is known.
 
-		std::vector<std::string> pwads;
+		std::vector<FileSys::ResourceName> pwads;
 		GetCmdLineFiles(pwads, false);
 		FString iwad = CheckGameInfo(pwads);
 
@@ -4078,11 +4129,12 @@ static int D_DoomMain_Internal (void)
 		// restart is initiated without a defined IWAD assume for now that it's not going to change.
 		if (iwad.IsEmpty()) iwad = lastIWAD;
 
-		std::vector<std::string> allwads;
+		std::vector<FileSys::ResourceName> allwads;
 
 		const FIWADInfo *iwad_info = iwad_man->FindIWAD(allwads, iwad.GetChars(), basewad.GetChars(), optionalwad.GetChars());
 
 		GetCmdLineFiles(pwads, false); // [RL0] Update with files passed on the launcher extra args
+		// For now these need to remain verifiable over the network.
 		GetCmdLineFiles(pwads, true);
 
 		if (!iwad_info) return 0;	// user exited the selection popup via cancel button.
@@ -4092,6 +4144,7 @@ static int D_DoomMain_Internal (void)
 		}
 		lastIWAD = iwad;
 
+		/*
 		if (GameStartupInfo.DiscordAppId.GetChars())
 		{
 			const char* check = GameStartupInfo.DiscordAppId.GetChars();
@@ -4109,6 +4162,7 @@ static int D_DoomMain_Internal (void)
 			if (failedcheck)
 				GameStartupInfo.DiscordAppId = "";
 		}
+		*/
 
 		if (GameStartupInfo.SteamAppId.GetChars())
 		{
@@ -4189,10 +4243,10 @@ int GameMain()
 	if (!zwidget)
 		zwidget = DisplayBackend::TryCreateSDL2();
 	if (!zwidget)
-    {
+	{
 		fprintf(stderr, "Unable to create init zwidget\n");
 		return -1;
-    }
+	}
 	DisplayBackend::Set(std::move(zwidget));
 
 	int ret = 0;
@@ -4310,7 +4364,7 @@ void D_Cleanup()
 	GameStartupInfo.Name = "";
 	GameStartupInfo.BkColor = GameStartupInfo.FgColor = GameStartupInfo.Type = 0;
 	GameStartupInfo.LoadWidescreen = GameStartupInfo.LoadLights = GameStartupInfo.LoadBrightmaps = -1;
-	GameStartupInfo.DiscordAppId = "";
+	//GameStartupInfo.DiscordAppId = "";
 	GameStartupInfo.SteamAppId = "";
 
 	GC::FullGC();					// clean up before taking down the object list.
@@ -4399,7 +4453,6 @@ void I_UpdateWindowTitle()
 		titlestr = GameStartupInfo.Name;
 		break;
 	default:
-		I_UpdateDiscordPresence(false, NULL, GameStartupInfo.DiscordAppId.GetChars(), GameStartupInfo.SteamAppId.GetChars());
 		I_SetWindowTitle(NULL);
 		return;
 	}
@@ -4429,10 +4482,6 @@ void I_UpdateWindowTitle()
 		}
 	}
 	*dstp = 0;
-	if (i_discordrpc)
-		I_UpdateDiscordPresence(true, copy.Data(), GameStartupInfo.DiscordAppId.GetChars(), GameStartupInfo.SteamAppId.GetChars());
-	else
-		I_UpdateDiscordPresence(false, nullptr, nullptr, nullptr);
 	I_SetWindowTitle(copy.Data());
 }
 
@@ -4448,7 +4497,7 @@ CCMD(fs_dir)
 		auto fnid = fileSystem.GetResourceId(i);
 		auto length = fileSystem.FileLength(i);
 		bool hidden = fileSystem.FindFile(fn1) != i;
-		Printf(PRINT_HIGH | PRINT_NONOTIFY, "%s%-64s %-15s (%5d) %10ld %s %s\n", hidden ? TEXTCOLOR_RED : TEXTCOLOR_UNTRANSLATED, fn1, fns, fnid, length, container, hidden ? "(h)" : "");
+		Printf(PRINT_NONOTIFY, "%s%-64s %-15s (%5d) %10ld %s %s\n", hidden ? TEXTCOLOR_RED : TEXTCOLOR_UNTRANSLATED, fn1, fns, fnid, length, container, hidden ? "(h)" : "");
 	}
 }
 

@@ -32,6 +32,7 @@
 #include "configfile.h"
 #include "gstrings.h"
 #include "menu.h"
+#include "name.h"
 #include "vm.h"
 #include "v_video.h"
 #include "i_system.h"
@@ -60,7 +61,11 @@ CVAR(Bool, m_cleanscale, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 // Option Search
 CVAR(Bool, os_isanyof, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 // Tooltip
-CVAR(Bool, m_tooltip_capwidth, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CUSTOM_CVAR(Float, m_tooltip_capratio, 4.0/3.0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+{
+	if (self < 0)
+		self = 0;
+}
 CVAR(Bool, m_tooltip_small, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CUSTOM_CVAR(Int, m_tooltip_lines, 3, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 {
@@ -274,7 +279,7 @@ IMPLEMENT_POINTERS_START(DMenu)
 	IMPLEMENT_POINTER(mParentMenu)
 IMPLEMENT_POINTERS_END
 
-DMenu::DMenu(DMenu *parent) 
+DMenu::DMenu(DMenu *parent)
 {
 	mParentMenu = parent;
 	mMouseCapture = false;
@@ -626,8 +631,8 @@ DEFINE_ACTION_FUNCTION(DMenu, SetMenu)
 //
 //=============================================================================
 
-bool M_Responder (event_t *ev) 
-{ 
+bool M_Responder (event_t *ev)
+{
 	int ch = 0;
 	bool keyup = false;
 	int mkey = NUM_MKEYS;
@@ -638,7 +643,7 @@ bool M_Responder (event_t *ev)
 		return false;
 	}
 
-	if (CurrentMenu != nullptr && menuactive != MENU_Off) 
+	if (CurrentMenu != nullptr && menuactive != MENU_Off)
 	{
 		// There are a few input sources we are interested in:
 		//
@@ -846,7 +851,7 @@ bool M_Responder (event_t *ev)
 			}
 			return false;
 		}
-		else if (ev->type == EV_GUI_Event && ev->subtype == EV_GUI_LButtonDown && 
+		else if (ev->type == EV_GUI_Event && ev->subtype == EV_GUI_LButtonDown &&
 				 ConsoleState != c_down && gamestate != GS_LEVEL && m_use_mouse)
 		{
 			M_StartControlPanel(true);
@@ -863,10 +868,10 @@ bool M_Responder (event_t *ev)
 //
 //=============================================================================
 
-void M_Ticker (void) 
+void M_Ticker (void)
 {
 	MenuTime++;
-	if (CurrentMenu != nullptr && menuactive != MENU_Off) 
+	if (CurrentMenu != nullptr && menuactive != MENU_Off)
 	{
 		CurrentMenu->CallTicker();
 	}
@@ -905,11 +910,11 @@ void M_Ticker (void)
 //
 //=============================================================================
 
-void M_Drawer (void) 
+void M_Drawer (void)
 {
 	PalEntry fade = 0;
 
-	if (CurrentMenu != nullptr && menuactive != MENU_Off) 
+	if (CurrentMenu != nullptr && menuactive != MENU_Off)
 	{
 		if (!CurrentMenu->DontBlur) screen->BlurScene(menuBlurAmount);
 		if (!CurrentMenu->DontDim)
@@ -982,7 +987,7 @@ void M_PreviousMenu()
 //
 //=============================================================================
 
-void M_Init (void) 
+void M_Init (void)
 {
 	try
 	{
@@ -993,7 +998,7 @@ void M_Init (void)
 	{
 		menuDelegate = nullptr;
 		err.MaybePrintMessage();
-		Printf(PRINT_NONOTIFY | PRINT_BOLD, "%s", err.stacktrace.GetChars());
+		Printf(static_cast<PrintFlag>(PRINT_NONOTIFY | PRINT_BOLD), "%s", err.stacktrace.GetChars());
 		I_FatalError("Failed to initialize menus");
 	}
 	catch (...)
@@ -1011,7 +1016,7 @@ void M_Init (void)
 //
 //=============================================================================
 
-void M_EnableMenu (bool on) 
+void M_EnableMenu (bool on)
 {
 	MenuEnabled = on;
 }
@@ -1157,12 +1162,18 @@ DEFINE_FIELD(DImageScrollerDescriptor, virtHeight)
 
 struct IJoystickConfig;
 // These functions are used by dynamic menu creation.
-DMenuItemBase * CreateOptionMenuItemStaticText(const char *name, int v)
+DMenuItemBase * CreateOptionMenuItemStaticText(
+	const char *name,
+	int v,
+	FIntCVar *greycheck,
+	int greycheckVal,
+	FName greycheckMode
+)
 {
 	auto c = PClass::FindClass("OptionMenuItemStaticText");
 	auto p = c->CreateNew();
 	FString namestr = name;
-	VMValue params[] = { p, &namestr, v };
+	VMValue params[] = { p, &namestr, v, greycheck, greycheckVal, greycheckMode.GetIndex() };
 	auto f = dyn_cast<PFunction>(c->FindSymbol("Init", false));
 	VMCall(f->Variants[0].Implementation, params, countof(params), nullptr, 0);
 	return (DMenuItemBase*)p;
@@ -1179,12 +1190,19 @@ DMenuItemBase * CreateOptionMenuItemJoyConfigMenu(const char *label, IJoystickCo
 	return (DMenuItemBase*)p;
 }
 
-DMenuItemBase * CreateOptionMenuItemSubmenu(const char *label, FName cmd, int center)
+DMenuItemBase * CreateOptionMenuItemSubmenu(
+	const char *label,
+	FName cmd,
+	int param,
+	FIntCVar *greycheck,
+	int greycheckVal,
+	FName greycheckMode
+)
 {
 	auto c = PClass::FindClass("OptionMenuItemSubmenu");
 	auto p = c->CreateNew();
 	FString namestr = label;
-	VMValue params[] = { p, &namestr, cmd.GetIndex(), center, false };
+	VMValue params[] = { p, &namestr, cmd.GetIndex(), param, false, greycheck, greycheckVal, greycheckMode.GetIndex() };
 	auto f = dyn_cast<PFunction>(c->FindSymbol("Init", false));
 	VMCall(f->Variants[0].Implementation, params, countof(params), nullptr, 0);
 	return (DMenuItemBase*)p;
@@ -1201,12 +1219,19 @@ DMenuItemBase * CreateOptionMenuItemControl(const char *label, FName cmd, FKeyBi
 	return (DMenuItemBase*)p;
 }
 
-DMenuItemBase * CreateOptionMenuItemCommand(const char *label, FName cmd, bool centered)
+DMenuItemBase * CreateOptionMenuItemCommand(
+	const char *label,
+	FName cmd,
+	bool centered,
+	FIntCVar *greycheck,
+	int greycheckVal,
+	FName greycheckMode
+)
 {
 	auto c = PClass::FindClass("OptionMenuItemCommand");
 	auto p = c->CreateNew();
 	FString namestr = label;
-	VMValue params[] = { p, &namestr, cmd.GetIndex(), centered, false };
+	VMValue params[] = { p, &namestr, cmd.GetIndex(), centered, false, greycheck, greycheckVal, greycheckMode.GetIndex() };
 	auto f = dyn_cast<PFunction>(c->FindSymbol("Init", false));
 	VMCall(f->Variants[0].Implementation, params, countof(params), nullptr, 0);
 	auto unsafe = dyn_cast<PField>(c->FindSymbol("mUnsafe", false));

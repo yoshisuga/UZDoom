@@ -6,6 +6,10 @@ set(SDL2_FOUND TRUE)
 set(SDL2_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/bin/iOS/sdl/include")
 set(SDL2_LIBRARY "${CMAKE_SOURCE_DIR}/bin/iOS/sdl/libSDL2.a")
 include_directories(SYSTEM "${SDL2_INCLUDE_DIR}")
+# The prebuilt iOS SDL headers are flat, but upstream includes them as <SDL2/SDL.h>.
+# bin/iOS/sdl/SDL2 is a symlink to include/, so adding its parent makes both forms resolve
+# and lets us take upstream's include lines verbatim.
+include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/bin/iOS/sdl")
 message(STATUS "✓ SDL2 configured for iOS")
 
 
@@ -46,7 +50,11 @@ set_target_properties(zdoom PROPERTIES
   MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/ios/genzd-template-info.plist"
 
   XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon18"
-  XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES "AppIcon;AppIconZero;AppIconGold2;AppIconGold1"
+  # Space-separated, NOT semicolon-separated: Xcode parses this as a string list. A ";"
+  # joined value reaches actool as one bogus icon name, so no alternates get compiled and
+  # no CFBundleAlternateIcons is emitted - which makes UIApplication.supportsAlternateIcons
+  # false and setAlternateIconName() silently do nothing.
+  XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES "AppIcon AppIconZero AppIconGold2 AppIconGold1"
 )
 
 set( CMAKE_EXE_LINKER_FLAGS "" )
@@ -76,6 +84,13 @@ target_link_libraries(zdoom
   "${CMAKE_SOURCE_DIR}/bin/iOS/libogg.a"
   "${CMAKE_SOURCE_DIR}/bin/iOS/libFLAC.a"
   "${CMAKE_SOURCE_DIR}/bin/iOS/libmpg123.a"
+
+  # libsndfile.a was built with MPEG (LAME) and Opus support, so it references lame_*/
+  # id3tag_* and opus_* symbols. These only surface once libsndfile is actually linked -
+  # i.e. once ZMusic stops dlopen'ing it (see the iOS branch in
+  # libraries/ZMusic/source/CMakeLists.txt). Must come after libsndfile.a.
+  "${CMAKE_SOURCE_DIR}/bin/iOS/liblame.a"
+  "${CMAKE_SOURCE_DIR}/bin/iOS/libopus.a"
 
   "${CMAKE_SOURCE_DIR}/bin/iOS/VPX.framework"
   "${CMAKE_SOURCE_DIR}/bin/iOS/WebP.framework"
@@ -214,5 +229,57 @@ function(add_ios_sources target_name ios_source_dir)
 endfunction()
 
 add_ios_sources(zdoom "${CMAKE_SOURCE_DIR}/src/ios")
+
+# --------------------------------------------------------------------------------------
+# Stage game data into the real iOS app bundle.
+#
+# add_pk3()'s copy step and the soundfont/fm_bank POST_BUILD in src/CMakeLists.txt both
+# target ZDOOM_RESOURCE_DIR, which on Apple resolves to
+# "${PROJECT_BINARY_DIR}/${ZDOOM_EXE_NAME}.app/Contents/Resources" - a macOS layout using
+# the wrong app name ("uzdoom" vs OUTPUT_NAME "GenZD") and ignoring Xcode's per-config
+# output directory. On iOS that is a stray directory that never ships; bundles are flat,
+# so the engine looks for BASEWAD next to the executable at the .app root.
+#
+# This must be POST_BUILD on zdoom itself. A separate copy target referencing
+# $<TARGET_BUNDLE_DIR:zdoom> makes that target depend on zdoom, while zdoom already
+# depends on the pk3 copy targets - CMake then fails with an inter-target dependency
+# cycle. POST_BUILD also guarantees the bundle exists before anything is copied into it.
+set(GENZD_PK3S
+    uzdoom.pk3
+    brightmaps.pk3
+    lights.pk3
+    game_support.pk3
+    game_widescreen_gfx.pk3
+)
+
+foreach(pk3 IN LISTS GENZD_PK3S)
+    add_custom_command(TARGET zdoom POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${ZDOOM_OUTPUT_DIR}/${pk3}"
+            "$<TARGET_BUNDLE_DIR:zdoom>/${pk3}"
+        COMMENT "GenZD: staging ${pk3} into the app bundle"
+        VERBATIM
+    )
+endforeach()
+
+add_custom_command(TARGET zdoom POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_BUNDLE_DIR:zdoom>/soundfonts"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_BUNDLE_DIR:zdoom>/fm_banks"
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/soundfont/uzdoom.sf2"
+        "$<TARGET_BUNDLE_DIR:zdoom>/soundfonts/uzdoom.sf2"
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/fm_banks/GENMIDI.GS.wopl"
+        "$<TARGET_BUNDLE_DIR:zdoom>/fm_banks/GENMIDI.GS.wopl"
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/fm_banks/gs-by-papiezak-and-sneakernets.wopn"
+        "$<TARGET_BUNDLE_DIR:zdoom>/fm_banks/gs-by-papiezak-and-sneakernets.wopn"
+
+    COMMENT "GenZD: staging soundfonts and fm_banks into the app bundle"
+    VERBATIM
+)
 
 message(STATUS "GenZD target configuration complete")

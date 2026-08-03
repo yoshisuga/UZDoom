@@ -21,17 +21,7 @@
 **
 */
 
-// The #defines here *MUST* match serializer.cpp, or we will get countless strange errors.
-#define RAPIDJSON_48BITPOINTER_OPTIMIZATION 0	// disable this insanity which is bound to make the code break over time.
-#define RAPIDJSON_HAS_CXX11_RVALUE_REFS 1
-#define RAPIDJSON_HAS_CXX11_RANGE_FOR 1
-#define RAPIDJSON_PARSE_DEFAULT_FLAGS kParseFullPrecisionFlag
-
-#include <miniz.h>
-#include "rapidjson/rapidjson.h"
-#include "rapidjson/writer.h"
-#include "rapidjson/prettywriter.h"
-#include "rapidjson/document.h"
+#include "serializer_rapidjson.h"
 #include "serializer_doom.h"
 #include "actor.h"
 #include "r_defs.h"
@@ -79,7 +69,7 @@ FSerializer &SerializeArgs(FSerializer& arc, const char *key, int *args, int *de
 	if (arc.isWriting())
 	{
 		auto &w = arc.w;
-		if (w->inObject() && defargs != nullptr && !memcmp(args, defargs, 5 * sizeof(int)))
+		if (arc.canSkip() && defargs != nullptr && !memcmp(args, defargs, 5 * sizeof(int)))
 		{
 			return arc;
 		}
@@ -146,7 +136,7 @@ FSerializer &SerializeArgs(FSerializer& arc, const char *key, int *args, int *de
 
 FSerializer &SerializeTerrain(FSerializer &arc, const char *key, int &terrain, int *def)
 {
-	if (arc.isWriting() && def != nullptr && terrain == *def)
+	if (arc.canSkip() && def != nullptr && terrain == *def)
 	{
 		return arc;
 	}
@@ -169,7 +159,7 @@ FSerializer &FDoomSerializer::Sprite(const char *key, int32_t &spritenum, int32_
 {
 	if (isWriting())
 	{
-		if (w->inObject() && def != nullptr && *def == spritenum) return *this;
+		if (canSkip() && def != nullptr && *def == spritenum) return *this;
 		WriteKey(key);
 		w->String(sprites[spritenum].name, 4);
 	}
@@ -298,7 +288,7 @@ template<> FSerializer &Serialize(FSerializer &arc, const char *key, PClassActor
 {
 	if (arc.isWriting())
 	{
-		if (!arc.w->inObject() || def == nullptr || clst != *def)
+		if (!arc.canSkip() || def == nullptr || clst != *def)
 		{
 			arc.WriteKey(key);
 			if (clst == nullptr)
@@ -348,7 +338,7 @@ FSerializer &Serialize(FSerializer &arc, const char *key, FState *&state, FState
 	if (retcode) *retcode = false;
 	if (arc.isWriting())
 	{
-		if (!arc.w->inObject() || def == nullptr || state != *def)
+		if (!arc.canSkip() || def == nullptr || state != *def)
 		{
 			if (retcode) *retcode = true;
 			arc.WriteKey(key);
@@ -443,7 +433,7 @@ template<> FSerializer& Serialize(FSerializer& arc, const char* key, FDecalBase*
 {
 	if (arc.isWriting())
 	{
-		if (!arc.w->inObject() || def == nullptr || decal != *def)
+		if (!arc.canSkip() || def == nullptr || decal != *def)
 		{
 			arc.WriteKey(key);
 			if (decal == nullptr)
@@ -478,7 +468,7 @@ template<> FSerializer &Serialize(FSerializer &arc, const char *key, FStrifeDial
 	auto doomarc = static_cast<FDoomSerializer*>(&arc);
 	if (arc.isWriting())
 	{
-		if (!arc.w->inObject() || def == nullptr || node != *def)
+		if (!arc.canSkip() || def == nullptr || node != *def)
 		{
 			arc.WriteKey(key);
 			if (node == nullptr)
@@ -534,7 +524,7 @@ template<> FSerializer &Serialize(FSerializer &arc, const char *key, FString *&p
 {
 	if (arc.isWriting())
 	{
-		if (!arc.w->inObject() || def == nullptr || pstr != *def)
+		if (!arc.canSkip() || def == nullptr || pstr != *def)
 		{
 			arc.WriteKey(key);
 			if (pstr == nullptr)
@@ -559,7 +549,12 @@ template<> FSerializer &Serialize(FSerializer &arc, const char *key, FString *&p
 			}
 			else if (val->IsString())
 			{
-				pstr = AActor::mStringPropertyData.Alloc(UnicodeToString(val->GetString()));
+				auto intermediate = UnicodeToString(val->GetString());
+				if (def != nullptr && *def != nullptr && std::string_view(intermediate) == std::string_view((*def)->GetChars())) {
+					pstr = *def;
+				} else {
+					pstr = AActor::mStringPropertyData.Alloc(intermediate);
+				}
 			}
 			else
 			{
@@ -583,7 +578,7 @@ template<> FSerializer &Serialize(FSerializer &arc, const char *key, char *&pstr
 {
 	if (arc.isWriting())
 	{
-		if (!arc.w->inObject() || def == nullptr || strcmp(pstr, *def))
+		if (!arc.canSkip() || def == nullptr || strcmp(pstr, *def))
 		{
 			arc.WriteKey(key);
 			if (pstr == nullptr)
@@ -640,7 +635,7 @@ template<> FSerializer &Serialize(FSerializer &arc, const char *key, FLevelLocal
 	auto doomarc = static_cast<FDoomSerializer*>(&arc);
 	if (arc.isWriting())
 	{
-		if (!arc.w->inObject() || lev == nullptr)
+		if (!arc.canSkip() || lev == nullptr)
 		{
 			arc.WriteKey(key);
 			if (lev == nullptr)
@@ -654,10 +649,7 @@ template<> FSerializer &Serialize(FSerializer &arc, const char *key, FLevelLocal
 				{
 					I_Error("Attempt to serialize invalid level reference");
 				}
-				if (!arc.w->inObject())
-				{
-					arc.w->Bool(true);	// In the unlikely case this is used in an array, write a filler.
-				}
+				arc.w->Bool(true);
 			}
 		}
 	}
@@ -671,7 +663,7 @@ template<> FSerializer &Serialize(FSerializer &arc, const char *key, FLevelLocal
 			{
 				lev = nullptr;
 			}
-			else 
+			else
 			{
 				lev = doomarc->Level;
 			}
@@ -680,4 +672,3 @@ template<> FSerializer &Serialize(FSerializer &arc, const char *key, FLevelLocal
 	}
 	return arc;
 }
-

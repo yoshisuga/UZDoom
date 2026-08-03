@@ -179,6 +179,7 @@ std2:
 		'out'						{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Out : TK_Identifier); }
 		'static'					{ RET(TK_Static); }
 		'transient'					{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Transient : TK_Identifier); }
+		'norollback'				{ RET(ParseVersion >= MakeVersion(4, 15, 1)? TK_NoRollback : TK_Identifier); }
 		'final'						{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Final : TK_Identifier); }
 		'extend'					{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Extend : TK_Identifier); }
 		'protected'					{ RET(ParseVersion >= MakeVersion(1, 0, 0)? TK_Protected : TK_Identifier); }
@@ -213,7 +214,7 @@ std2:
 		'bright'					{ RET(StateOptions ? TK_Bright : TK_Identifier); }
 		'fast'						{ RET(StateOptions ? TK_Fast : TK_Identifier); }
 		'slow'						{ RET(StateOptions ? TK_Slow : TK_Identifier); }
-		'ticadjust'					{ RET(StateOptions ? TK_NoDelay : TK_Identifier); }	
+		'ticadjust'					{ RET(StateOptions ? TK_NoDelay : TK_Identifier); }
 		'nodelay'					{ RET(StateOptions ? TK_NoDelay : TK_Identifier); }
 		'canraise'					{ RET(StateOptions ? TK_CanRaise : TK_Identifier); }
 		'offset'					{ RET(StateOptions ? TK_Offset : TK_Identifier); }

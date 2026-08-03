@@ -131,6 +131,12 @@ typedef NS_ENUM(NSInteger, GamepadControl) {
 +(instancetype)shared;
 -(void)doMain;
 
+// VERSIONSTR from src/version.h, i.e. the UZDoom engine version this app was built from.
+// Distinct from LauncherView.currentVersion, which is the GenZD app version.
+// _Nonnull so Swift imports this as String rather than String! - an implicitly unwrapped
+// optional still interpolates as Optional("...").
++(NSString * _Nonnull)engineVersion;
+
 // Input hooks for GZDoom
 -(void)mouseMoveWithX:(NSInteger)x Y:(NSInteger)y;
 

@@ -109,7 +109,7 @@ public:
 		m_pitch = nullAngle;
 		m_explicitPitch = false;
 	}
-	
+
 	void SetType(ELightType type) { m_type = type; }
 	void CopyFrom(const FLightDefaults &other)
 	{
@@ -148,7 +148,7 @@ protected:
 	DAngle m_spotOuterAngle = DAngle::fromDeg(25.0);
 	DAngle m_pitch = nullAngle;
 	double m_LightDefIntensity = 1.0; // Light over/underbright multiplication for GLDEFS-defined lights
-	
+
 	friend FSerializer &Serialize(FSerializer &arc, const char *key, FLightDefaults &value, FLightDefaults *def);
 };
 
@@ -222,9 +222,9 @@ struct FDynamicLight
 
 	bool ShouldLightActor(AActor *check)
 	{
-		return visibletoplayer && IsActive() && 
+		return visibletoplayer && IsActive() &&
 				(!((*pLightFlags) & LF_DONTLIGHTSELF) || target != check) &&
-				(!((*pLightFlags) & LF_DONTLIGHTOTHERS) || target == check) && 
+				(!((*pLightFlags) & LF_DONTLIGHTOTHERS) || target == check) &&
 				(!((*pLightFlags) & LF_DONTLIGHTACTORS));
 	}
 
@@ -242,7 +242,7 @@ struct FDynamicLight
 	int GetIntensity() const { return pArgs[LIGHT_INTENSITY]; }
 	int GetSecondaryIntensity() const { return pArgs[LIGHT_SECONDARY_INTENSITY]; }
 	double GetLightDefIntensity() const { return lightDefIntensity; }
-	int GetTimer() const { return target->IsClientSide() ? Level->LocalTimer : Level->LocalWorldTimer; }
+	int GetTimer() const { return Level->LocalWorldTimer; }
 
 	bool IsSubtractive() const { return !!((*pLightFlags) & LF_SUBTRACTIVE); }
 	bool IsAdditive() const { return !!((*pLightFlags) & LF_ADDITIVE); }
@@ -308,5 +308,3 @@ public:
 
 	FDynamicLightTouchLists touchlists;
 };
-
-

@@ -33,7 +33,7 @@
 #include "fs_decompress.h"
 
 namespace FileSys {
-	
+
 class StringPool;
 std::string ExtractBaseName(const char* path, bool include_extension = false);
 void strReplace(std::string& str, const char* from, const char* to);
@@ -149,6 +149,7 @@ protected:
 	char Hash[48];
 	bool HashGenerated;
 	StringPool* stringpool;
+	bool bOptional;
 
 	// for archives that can contain directories
 	virtual void SetEntryAddress(uint32_t entry)
@@ -165,12 +166,14 @@ private:
 	bool FindPrefixRange(const char* filter, uint32_t max, uint32_t &start, uint32_t &end);
 	void JunkLeftoverFilters(uint32_t max);
 	void FindCommonFolder(LumpFilterInfo* filter);
-	static FResourceFile *DoOpenResourceFile(const char *filename, FileReader &file, bool containeronly, LumpFilterInfo* filter, FileSystemMessageFunc Printf, StringPool* sp);
+	void SetOptional(bool optional) { bOptional = optional; }
+	static FResourceFile *DoOpenResourceFile(const char *filename, FileReader &file, bool containeronly, LumpFilterInfo* filter, FileSystemMessageFunc Printf, StringPool* sp, bool optional);
 
 public:
-	static FResourceFile *OpenResourceFile(const char *filename, FileReader &file, bool containeronly = false, LumpFilterInfo* filter = nullptr, FileSystemMessageFunc Printf = nullptr, StringPool* sp = nullptr);
-	static FResourceFile *OpenResourceFile(const char *filename, bool containeronly = false, LumpFilterInfo* filter = nullptr, FileSystemMessageFunc Printf = nullptr, StringPool* sp = nullptr);
-	static FResourceFile *OpenDirectory(const char *filename, LumpFilterInfo* filter = nullptr, FileSystemMessageFunc Printf = nullptr, StringPool* sp = nullptr);
+	static FResourceFile *OpenResourceFile(const char *filename, FileReader &file, bool containeronly = false, LumpFilterInfo* filter = nullptr, FileSystemMessageFunc Printf = nullptr, StringPool* sp = nullptr, bool optional = false);
+	static FResourceFile *OpenResourceFile(const char *filename, bool containeronly = false, LumpFilterInfo* filter = nullptr, FileSystemMessageFunc Printf = nullptr, StringPool* sp = nullptr, bool optional = false);
+	static FResourceFile *OpenResourceFileMemory(const char *filename, const void * data, size_t len, bool containeronly = false, LumpFilterInfo* filter = nullptr, FileSystemMessageFunc Printf = nullptr, StringPool* sp = nullptr, bool optional = false);
+	static FResourceFile *OpenDirectory(const char *filename, LumpFilterInfo* filter = nullptr, FileSystemMessageFunc Printf = nullptr, StringPool* sp = nullptr, bool optional = false);
 	virtual ~FResourceFile();
 	// If this FResourceFile represents a directory, the Reader object is not usable so don't return it.
 	FileReader *GetContainerReader() { return Reader.isOpen()? &Reader : nullptr; }
@@ -227,6 +230,8 @@ public:
 	virtual FileData Read(uint32_t entry);
 
 	virtual FCompressedBuffer GetRawData(uint32_t entry);
+
+	bool IsOptional() const { return bOptional; }
 
 	FileReader Destroy()
 	{

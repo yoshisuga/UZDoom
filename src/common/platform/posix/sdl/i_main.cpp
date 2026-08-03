@@ -24,12 +24,14 @@
 
 // HEADER FILES ------------------------------------------------------------
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 #include <csignal>
+#include <fcntl.h>
 #include <locale.h>
 #include <new>
 #include <signal.h>
 #include <sys/param.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/utsname.h>
 #include <unistd.h>
@@ -58,7 +60,34 @@ void Mac_I_FatalError(const char* errortext);
 
 #ifdef __linux__
 void Linux_I_FatalError(const char* errortext);
+
+static void Linux_I_TryRestart(char **argv)
+{
+	// TODO: Check how Flatpak interacts with this, too
+
+	const char *appimage = getenv("APPIMAGE");
+	if (appimage)
+	{
+		int appimage_file = open(appimage, O_RDONLY);
+		fexecve(appimage_file, argv, environ);
+		return;
+	}
+
+	int self_file = open("/proc/self/exe", O_RDONLY);
+	fexecve(self_file, argv, environ);
+}
 #endif
+
+static void I_TryRestart(char **argv)
+{
+	// TODO: Mac support
+
+#ifdef __linux__
+	Linux_I_TryRestart(argv);
+#endif
+}
+
+bool SDL_I_CheckForRestart(void);
 
 // PUBLIC FUNCTION PROTOTYPES ----------------------------------------------
 int GameMain();
@@ -142,6 +171,13 @@ FString I_DetectOS()
 
 void I_StartupJoysticks();
 
+#define SDL_SETENV(k, v)                                           \
+	do {                                                           \
+		auto old = SDL_getenv(k);                                  \
+		if (old) DEBUG_LOG("%s already set as '%s'", k, old);      \
+		if (SDL_setenv(k, v, 0)) DEBUG_LOG("Failed to set %s", k); \
+	} while (0);
+
 int main (int argc, char **argv)
 {
 #if !defined (__APPLE__)
@@ -156,11 +192,8 @@ int main (int argc, char **argv)
 	// signal(SIGHUP, SignalHandler);
 	// signal(SIGQUIT, SignalHandler);
 
-	printf(GAMENAME" %s - %s - SDL version\nCompiled on %s\n",
-		GetVersionString(), GetGitTime(), __DATE__);
-
 	// GenZD Custom
-  SDL_SetHint(SDL_HINT_ACCELEROMETER_AS_JOYSTICK, "0");
+	SDL_SetHint(SDL_HINT_ACCELEROMETER_AS_JOYSTICK, "0");
 
 	seteuid (getuid ());
 	// Set LC_NUMERIC environment variable in case some library decides to
@@ -170,6 +203,14 @@ int main (int argc, char **argv)
 
 	setlocale (LC_ALL, "C");
 
+/* currently this is causing issues in the appimage build
+#ifdef __linux
+	SDL_SETENV("SDL_VIDEODRIVER", "wayland,x11");
+#endif
+*/
+
+	// despite the name, this also sets the wayland app_id
+	SDL_SETENV("SDL_VIDEO_X11_WMCLASS", APPID);
 	if (SDL_Init (0) < 0)
 	{
 		fprintf (stderr, "Could not initialize SDL:\n%s\n", SDL_GetError());
@@ -201,6 +242,14 @@ int main (int argc, char **argv)
 	const int result = GameMain();
 
 	printf("Yoshi: finished gzdoom process\n");
+
+	// I_TryRestart is a no-op outside __linux__, so this is inert on iOS.
+	if (SDL_I_CheckForRestart())
+	{
+		I_TryRestart(argv);
+	}
+
+	SDL_SetRelativeMouseMode(SDL_FALSE);
 	SDL_Quit();
 
 	return result;

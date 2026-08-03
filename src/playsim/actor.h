@@ -98,7 +98,7 @@ struct FDynamicLight;
 // things, but nothing can run into a missile).
 // Each block in the grid is 128*128 units, and knows about
 // every line_t that it contains a piece of, and every
-// interactable actor that has its origin contained.  
+// interactable actor that has its origin contained.
 //
 // A valid actor is an actor that has the proper subsector_t
 // filled in for its xy coordinates and is linked into the
@@ -146,7 +146,7 @@ enum ActorFlag
 	MF_CORPSE			= 0x00100000,	// don't stop moving halfway off a step
 	MF_INFLOAT			= 0x00200000,	// floating to a height for a move, don't
 										// auto float to target's height
-	MF_INBOUNCE			= 0x00200000,	// used by Heretic bouncing missiles 
+	MF_INBOUNCE			= 0x00200000,	// used by Heretic bouncing missiles
 
 	MF_COUNTKILL		= 0x00400000,	// count towards intermission kill total
 	MF_COUNTITEM		= 0x00800000,	// count towards intermission item total
@@ -194,7 +194,7 @@ enum ActorFlag2
 	MF2_MCROSS			= 0x00800000,	// can activate monster cross lines
 	MF2_PCROSS			= 0x01000000,	// can activate projectile cross lines
 	MF2_CANTLEAVEFLOORPIC=0x02000000,	// stay within a certain floor type
-	MF2_NONSHOOTABLE	= 0x04000000,	// mobj is totally non-shootable, 
+	MF2_NONSHOOTABLE	= 0x04000000,	// mobj is totally non-shootable,
 										// but still considered solid
 	MF2_INVULNERABLE	= 0x08000000,	// mobj is invulnerable
 	MF2_DORMANT			= 0x10000000,	// thing is dormant
@@ -302,7 +302,7 @@ enum ActorFlag5
 	MF5_ALWAYSRESPAWN	= 0x00020000,	// always respawns, regardless of skill setting
 	MF5_NEVERRESPAWN	= 0x00040000,	// never respawns, regardless of skill setting
 	MF5_DONTRIP			= 0x00080000,	// Ripping projectiles explode when hitting this actor
-	MF5_NOINFIGHTING	= 0x00100000,	// This actor doesn't switch target when it's hurt 
+	MF5_NOINFIGHTING	= 0x00100000,	// This actor doesn't switch target when it's hurt
 	MF5_NOINTERACTION	= 0x00200000,	// Thing is completely excluded from any gameplay related checks
 	MF5_NOTIMEFREEZE	= 0x00400000,	// Actor is not affected by time freezer
 	MF5_PUFFGETSOWNER	= 0x00800000,	// [BB] Sets the owner of the puff to the player who fired it
@@ -363,7 +363,7 @@ enum ActorFlag7
 	MF7_HANDLENODELAY	= 0x00000008,	// respect NoDelay state flag
 	MF7_WEAPONSPAWN		= 0x00000010,	// subject to DF_NO_COOP_WEAPON_SPAWN dmflag
 	MF7_HARMFRIENDS		= 0x00000020,	// is allowed to harm friendly monsters.
-	MF7_BUDDHA			= 0x00000040,	// Behaves just like the buddha cheat. 
+	MF7_BUDDHA			= 0x00000040,	// Behaves just like the buddha cheat.
 	MF7_FOILBUDDHA		= 0x00000080,	// Similar to FOILINVUL, foils buddha mode.
 	MF7_DONTTHRUST		= 0x00000100,	// Thrusting functions do not take, and do not give thrust (damage) to actors with this flag.
 	MF7_ALLOWPAIN		= 0x00000200,	// Invulnerable or immune (via damagefactors) actors can still react to taking damage even if they don't.
@@ -434,7 +434,7 @@ enum ActorFlag9
 	MF9_DOSHADOWBLOCK			= 0x00000002,	// [inkoalawetrust] Should the monster look for SHADOWBLOCK actors ?
 	MF9_SHADOWBLOCK				= 0x00000004,	// [inkoalawetrust] Actors in the line of fire with this flag trigger the MF_SHADOW aiming penalty.
 	MF9_SHADOWAIMVERT			= 0x00000008,	// [inkoalawetrust] Monster aim is also offset vertically when aiming at shadow actors.
-	MF9_DECOUPLEDANIMATIONS		= 0x00000010,	// [RL0] Decouple model animations from states
+	MF9_DECOUPLEDANIMATIONS		= 0x00000010,	// [Jay] Decouple model animations from states
 	MF9_NOSECTORDAMAGE			= 0x00000020,	// [inkoalawetrust] Actor ignores any sector-based damage (i.e damaging floors, NOT crushers)
 	MF9_ISPUFF					= 0x00000040,	// [AA] Set on actors by P_SpawnPuff
 	MF9_FORCESECTORDAMAGE		= 0x00000080,	// [inkoalawetrust] Actor ALWAYS takes hurt floor damage if there's any. Even if the floor doesn't have SECMF_HURTMONSTERS.
@@ -562,7 +562,7 @@ enum ActorBounceFlag
 	BOUNCE_Doom = BOUNCE_Walls | BOUNCE_Floors | BOUNCE_Ceilings | BOUNCE_Actors | BOUNCE_AutoOff,
 	BOUNCE_Hexen = BOUNCE_Walls | BOUNCE_Floors | BOUNCE_Ceilings | BOUNCE_Actors,
 	BOUNCE_Grenade = BOUNCE_MBF | BOUNCE_Doom,		// Bounces on walls and flats like ZDoom bounce.
-	BOUNCE_Classic = BOUNCE_MBF | BOUNCE_Floors | BOUNCE_Ceilings,	// Bounces on flats only, but 
+	BOUNCE_Classic = BOUNCE_MBF | BOUNCE_Floors | BOUNCE_Ceilings,	// Bounces on flats only, but
 																	// does not die when bouncing.
 
 	// combined types
@@ -819,6 +819,8 @@ public:
 	virtual void PostBeginPlay() override;		// Called immediately before the actor's first tick
 	virtual void Tick() override;
 	void EnableNetworking(const bool enable) override;
+
+	int GetModelTimer();
 
 	void CalcBones(bool recalc);
 	TRS GetBoneTRS(int model_index, int bone_index, bool with_override);
@@ -1136,7 +1138,6 @@ public:
 	void SetDynamicLights();
 
 // info for drawing
-// NOTE: The first member variable *must* be snext.
 	AActor			*snext, **sprev;	// links in sector (if needed)
 	DVector3		__Pos;		// double underscores so that it won't get used by accident. Access to this should be exclusively through the designated access functions.
 
@@ -1293,7 +1294,7 @@ public:
 	double			Gravity;		// [GRB] Gravity factor
 	double			Friction;
 	double			pushfactor;
-	double			ShadowAimFactor;	// [inkoalawetrust] How much the actors' aim is affected when attacking shadow actors. 
+	double			ShadowAimFactor;	// [inkoalawetrust] How much the actors' aim is affected when attacking shadow actors.
 	double			ShadowPenaltyFactor;// [inkoalawetrust] How much the shadow actor affects its' shooters' aim.
 	int				bouncecount;	// Strife's grenades only bounce twice before exploding
 	int 			FastChaseStrafeCount;
@@ -1374,6 +1375,9 @@ public:
 	int RipperLevel;
 	int RipLevelMin;
 	int RipLevelMax;
+
+	int MinRespawnTics; // id24: Minimal Tics to Respawn the Actor in skills with respawning or with ALWAYSRESPAWN flag, negative values are seconds and 0 uses the Skill value
+	int RespawnDice; // id24: Chance for respawning
 
 	int ConversationRoot;				// THe root of the current dialogue
 	FStrifeDialogueNode* Conversation;	// [RH] The dialogue to show when this actor is "used."

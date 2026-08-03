@@ -70,12 +70,12 @@ std::string ExtractBaseName(const char* path, bool include_extension)
 	return std::string();
 }
 
-void strReplace(std::string& str, const char *from, const char* to) 
+void strReplace(std::string& str, const char *from, const char* to)
 {
 	if (*from == 0)
 		return;
 	size_t start_pos = 0;
-	while ((start_pos = str.find(from, start_pos)) != std::string::npos) 
+	while ((start_pos = str.find(from, start_pos)) != std::string::npos)
 	{
 		str.replace(start_pos, strlen(from), to);
 		start_pos += strlen(to);
@@ -93,7 +93,7 @@ bool FResourceFile::IsFileInFolder(const char* const resPath)
 	// Checks a special case when <somefile.wad> was put in
 	// <myproject> directory inside <myproject.zip>
 
-    const auto dirName = ExtractBaseName(FileName);
+	const auto dirName = ExtractBaseName(FileName);
 	const auto fileName = ExtractBaseName(resPath, true);
 	const std::string filePath = dirName + '/' + fileName;
 
@@ -147,7 +147,7 @@ static int nulPrintf(FSMessageLevel msg, const char* fmt, ...)
 	return 0;
 }
 
-FResourceFile *FResourceFile::DoOpenResourceFile(const char *filename, FileReader &file, bool containeronly, LumpFilterInfo* filter, FileSystemMessageFunc Printf, StringPool* sp)
+FResourceFile *FResourceFile::DoOpenResourceFile(const char *filename, FileReader &file, bool containeronly, LumpFilterInfo* filter, FileSystemMessageFunc Printf, StringPool* sp, bool optional)
 {
 	if (!file.isOpen()) return nullptr;
 	if (Printf == nullptr) Printf = nulPrintf;
@@ -155,28 +155,43 @@ FResourceFile *FResourceFile::DoOpenResourceFile(const char *filename, FileReade
 	{
 		if (containeronly && func == CheckLump) break;
 		FResourceFile *resfile = func(filename, file, filter, Printf, sp);
-		if (resfile != NULL) return resfile;
+		if (resfile != NULL)
+		{
+			resfile->SetOptional(optional);
+			return resfile;
+		}
 	}
 	return NULL;
 }
 
-FResourceFile *FResourceFile::OpenResourceFile(const char *filename, FileReader &file, bool containeronly, LumpFilterInfo* filter, FileSystemMessageFunc Printf, StringPool* sp)
+FResourceFile *FResourceFile::OpenResourceFile(const char *filename, FileReader &file, bool containeronly, LumpFilterInfo* filter, FileSystemMessageFunc Printf, StringPool* sp, bool optional)
 {
-	return DoOpenResourceFile(filename, file, containeronly, filter, Printf, sp);
+	return DoOpenResourceFile(filename, file, containeronly, filter, Printf, sp, optional);
 }
 
 
-FResourceFile *FResourceFile::OpenResourceFile(const char *filename, bool containeronly, LumpFilterInfo* filter, FileSystemMessageFunc Printf, StringPool* sp)
+FResourceFile *FResourceFile::OpenResourceFile(const char *filename, bool containeronly, LumpFilterInfo* filter, FileSystemMessageFunc Printf, StringPool* sp, bool optional)
 {
 	FileReader file;
 	if (!file.OpenFile(filename)) return nullptr;
-	return DoOpenResourceFile(filename, file, containeronly, filter, Printf, sp);
+	return DoOpenResourceFile(filename, file, containeronly, filter, Printf, sp, optional);
 }
 
-FResourceFile *FResourceFile::OpenDirectory(const char *filename, LumpFilterInfo* filter, FileSystemMessageFunc Printf, StringPool* sp)
+
+FResourceFile *FResourceFile::OpenResourceFileMemory(const char *filename, const void * data, size_t len, bool containeronly, LumpFilterInfo* filter, FileSystemMessageFunc Printf, StringPool* sp, bool optional)
+{
+	FileReader file;
+	if (!file.OpenMemory(data, len)) return nullptr;
+	return DoOpenResourceFile(filename, file, containeronly, filter, Printf, sp, optional);
+}
+
+FResourceFile *FResourceFile::OpenDirectory(const char *filename, LumpFilterInfo* filter, FileSystemMessageFunc Printf, StringPool* sp, bool optional)
 {
 	if (Printf == nullptr) Printf = nulPrintf;
-	return CheckDir(filename, false, filter, Printf, sp);
+	auto resFile = CheckDir(filename, false, filter, Printf, sp);
+	if (resFile != nullptr)
+		resFile->SetOptional(optional);
+	return resFile;
 }
 
 //==========================================================================
@@ -289,7 +304,7 @@ int entrycmp(const void* a, const void* b)
 {
 	FResourceEntry* rec1 = (FResourceEntry*)a;
 	FResourceEntry* rec2 = (FResourceEntry*)b;
-	// we are comparing lowercase UTF-8 here 
+	// we are comparing lowercase UTF-8 here
 	return strcmp(rec1->FileName, rec2->FileName);
 }
 
@@ -321,7 +336,7 @@ void FResourceFile::GenerateHash(bool no_reader)
 	{
 		auto name = getName(i);
 		auto size = Length(i);
-		if (name == nullptr) 
+		if (name == nullptr)
 			continue;
 		md5_append(&state, (const uint8_t*)name, (unsigned)strlen(name) + 1);
 		md5_append(&state, (const uint8_t*)&size, sizeof(size));
@@ -585,7 +600,7 @@ bool FResourceFile::FindPrefixRange(const char* filter, uint32_t maxlump, uint32
 			break;
 		else if (cmp < 0)
 			min = mid + 1;
-		else		
+		else
 			max = mid - 1;
 	}
 	if (max < min)

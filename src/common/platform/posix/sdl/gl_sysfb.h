@@ -24,8 +24,9 @@
 #ifndef __POSIX_SDL_GL_SYSFB_H__
 #define __POSIX_SDL_GL_SYSFB_H__
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
+#include "gl_system.h"
 #include "v_video.h"
 
 class SystemBaseFrameBuffer : public DFrameBuffer

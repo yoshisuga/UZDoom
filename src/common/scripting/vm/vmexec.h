@@ -1533,7 +1533,7 @@ static int ExecScriptFunc(VMFrameStack *stack, VMReturn *ret, int numret)
 		ASSERTF(B); ASSERTF(C);
 		if (a & CMP_APPROX)
 		{
-			CMPJMP(fabs(reg.f[C] - reg.f[B]) < VM_EPSILON);
+			CMPJMP(fabs(reg.f[C] - reg.f[B]) < EQUAL_EPSILON);
 		}
 		else
 		{
@@ -1544,7 +1544,7 @@ static int ExecScriptFunc(VMFrameStack *stack, VMReturn *ret, int numret)
 		ASSERTF(B); ASSERTKF(C);
 		if (a & CMP_APPROX)
 		{
-			CMPJMP(fabs(konstf[C] - reg.f[B]) < VM_EPSILON);
+			CMPJMP(fabs(konstf[C] - reg.f[B]) < EQUAL_EPSILON);
 		}
 		else
 		{
@@ -1555,7 +1555,7 @@ static int ExecScriptFunc(VMFrameStack *stack, VMReturn *ret, int numret)
 		ASSERTF(B); ASSERTF(C);
 		if (a & CMP_APPROX)
 		{
-			CMPJMP((reg.f[B] - reg.f[C]) < -VM_EPSILON);
+			CMPJMP((reg.f[B] - reg.f[C]) < -EQUAL_EPSILON);
 		}
 		else
 		{
@@ -1566,7 +1566,7 @@ static int ExecScriptFunc(VMFrameStack *stack, VMReturn *ret, int numret)
 		ASSERTF(B); ASSERTKF(C);
 		if (a & CMP_APPROX)
 		{
-			CMPJMP((reg.f[B] - konstf[C]) < -VM_EPSILON);
+			CMPJMP((reg.f[B] - konstf[C]) < -EQUAL_EPSILON);
 		}
 		else
 		{
@@ -1577,7 +1577,7 @@ static int ExecScriptFunc(VMFrameStack *stack, VMReturn *ret, int numret)
 		ASSERTKF(B); ASSERTF(C);
 		if (a & CMP_APPROX)
 		{
-			CMPJMP((konstf[B] - reg.f[C]) < -VM_EPSILON);
+			CMPJMP((konstf[B] - reg.f[C]) < -EQUAL_EPSILON);
 		}
 		else
 		{
@@ -1588,7 +1588,7 @@ static int ExecScriptFunc(VMFrameStack *stack, VMReturn *ret, int numret)
 		ASSERTF(B); ASSERTF(C);
 		if (a & CMP_APPROX)
 		{
-			CMPJMP((reg.f[B] - reg.f[C]) <= -VM_EPSILON);
+			CMPJMP((reg.f[B] - reg.f[C]) <= -EQUAL_EPSILON);
 		}
 		else
 		{
@@ -1599,7 +1599,7 @@ static int ExecScriptFunc(VMFrameStack *stack, VMReturn *ret, int numret)
 		ASSERTF(B); ASSERTKF(C);
 		if (a & CMP_APPROX)
 		{
-			CMPJMP((reg.f[B] - konstf[C]) <= -VM_EPSILON);
+			CMPJMP((reg.f[B] - konstf[C]) <= -EQUAL_EPSILON);
 		}
 		else
 		{
@@ -1610,7 +1610,7 @@ static int ExecScriptFunc(VMFrameStack *stack, VMReturn *ret, int numret)
 		ASSERTKF(B); ASSERTF(C);
 		if (a & CMP_APPROX)
 		{
-			CMPJMP((konstf[B] - reg.f[C]) <= -VM_EPSILON);
+			CMPJMP((konstf[B] - reg.f[C]) <= -EQUAL_EPSILON);
 		}
 		else
 		{
@@ -1684,8 +1684,8 @@ static int ExecScriptFunc(VMFrameStack *stack, VMReturn *ret, int numret)
 	Do_EQV2:
 		if (a & CMP_APPROX)
 		{
-			CMPJMP(fabs(reg.f[B  ] - fcp[0]) < VM_EPSILON &&
-				   fabs(reg.f[B+1] - fcp[1]) < VM_EPSILON);
+			CMPJMP(fabs(reg.f[B  ] - fcp[0]) < EQUAL_EPSILON &&
+				   fabs(reg.f[B+1] - fcp[1]) < EQUAL_EPSILON);
 		}
 		else
 		{
@@ -1781,9 +1781,9 @@ static int ExecScriptFunc(VMFrameStack *stack, VMReturn *ret, int numret)
 	Do_EQV3:
 		if (a & CMP_APPROX)
 		{
-			CMPJMP(fabs(reg.f[B  ] - fcp[0]) < VM_EPSILON &&
-				   fabs(reg.f[B+1] - fcp[1]) < VM_EPSILON &&
-				   fabs(reg.f[B+2] - fcp[2]) < VM_EPSILON);
+			CMPJMP(fabs(reg.f[B  ] - fcp[0]) < EQUAL_EPSILON &&
+				   fabs(reg.f[B+1] - fcp[1]) < EQUAL_EPSILON &&
+				   fabs(reg.f[B+2] - fcp[2]) < EQUAL_EPSILON);
 		}
 		else
 		{
@@ -1871,10 +1871,10 @@ static int ExecScriptFunc(VMFrameStack *stack, VMReturn *ret, int numret)
 	Do_EQV4:
 		if (a & CMP_APPROX)
 		{
-			CMPJMP(fabs(reg.f[B  ] - fcp[0]) < VM_EPSILON &&
-				   fabs(reg.f[B+1] - fcp[1]) < VM_EPSILON &&
-				   fabs(reg.f[B+2] - fcp[2]) < VM_EPSILON &&
-				   fabs(reg.f[B+3] - fcp[3]) < VM_EPSILON);
+			CMPJMP(fabs(reg.f[B  ] - fcp[0]) < EQUAL_EPSILON &&
+				   fabs(reg.f[B+1] - fcp[1]) < EQUAL_EPSILON &&
+				   fabs(reg.f[B+2] - fcp[2]) < EQUAL_EPSILON &&
+				   fabs(reg.f[B+3] - fcp[3]) < EQUAL_EPSILON);
 		}
 		else
 		{
@@ -2103,7 +2103,7 @@ static void DoCast(const VMRegisters &reg, const VMFrame *f, int a, int b, int c
 		ASSERTS(a); ASSERTA(b);
 		if (reg.a[b] == nullptr) reg.s[a] = "null";
 		else reg.s[a].Format("%p", reg.a[b]);
-		break; 
+		break;
 	}
 
 	case CAST_S2I:
@@ -2125,7 +2125,7 @@ static void DoCast(const VMRegisters &reg, const VMFrame *f, int a, int b, int c
 		ASSERTS(a); ASSERTD(b);
 		FName name = FName(ENamedName(reg.d[b]));
 		reg.s[a] = name.IsValidName() ? name.GetChars() : "";
-		break; 
+		break;
 	}
 
 	case CAST_S2Co:

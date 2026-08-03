@@ -153,7 +153,7 @@ static int	CommandsAhead = 0;		// If too far ahead of the host, slow down to rem
 static int	SkipCommandTimer = 0;	// Tracker for when to check for skipping commands. ~0.5 seconds in a row of being ahead will start skipping.
 static int	SkipCommandAmount = 0;	// Amount of commands to skip. Try and batch skip them all at once since we won't be able to get an update until the full RTT.
 
-void D_ProcessEvents(void); 
+void D_ProcessEvents(void);
 void G_BuildTiccmd(usercmd_t *cmd);
 void D_DoAdvanceDemo(void);
 
@@ -285,7 +285,7 @@ public:
 			return;
 
 		Streams[CurrentClientTic % BACKUPTICS].Used = CurrentSize;
-		
+
 		CurrentClientTic = tic;
 		CurrentStream = Streams[tic % BACKUPTICS].Stream;
 		CurrentSize = 0;
@@ -362,6 +362,8 @@ public:
 	}
 } NetEvents;
 
+void P_ClearPredictionData();
+
 void Net_ClearBuffers()
 {
 	CloseNetwork();
@@ -386,7 +388,7 @@ void Net_ClearBuffers()
 			state.Tics[j].Data.SetData(nullptr, 0);
 	}
 
-	bPredictionGuard = false;
+	P_ClearPredictionData();
 	NetBufferLength = 0u;
 	RemoteClient = -1;
 	MaxClients = TicDup = 1u;
@@ -407,7 +409,7 @@ void Net_ClearBuffers()
 	CurStabilityTic = 0u;
 	memset(StabilityTics, 0, sizeof(StabilityTics));
 	NetEvents.ResetStream();
-	
+
 	CutsceneReady = 0u;
 	CutsceneCountdown = 0;
 	bCommandsReset = false;
@@ -551,7 +553,7 @@ void Net_ResetCommands(bool midTic)
 		ClientTic = gametic = tic * TicDup;
 		--tic;
 	}
-	
+
 	for (auto client : NetworkClients)
 	{
 		auto& state = ClientStates[client];
@@ -561,7 +563,7 @@ void Net_ResetCommands(bool midTic)
 		state.SequenceAck = min<int>(state.SequenceAck, tic);
 		if (state.ResendSequenceFrom >= tic)
 			state.ResendSequenceFrom = -1;
-		
+
 		// Make sure not to run its current command either.
 		auto& curTic = state.Tics[tic % BACKUPTICS];
 		const int running = (curTic.Command.buttons & BT_RUN); // This isn't delta'd so needs to be kept.
@@ -949,7 +951,7 @@ static void GetPackets()
 				clientState.StabilityBuffer = NetBuffer[curByte];
 		}
 		++curByte;
-		
+
 		for (int p = 0; p < playerCount; ++p)
 		{
 			const int pNum = NetBuffer[curByte++];
@@ -1024,7 +1026,7 @@ static void GetPackets()
 					continue;
 
 				// Skipped a command. Packet likely got corrupted while being put back together, so have
-				// the client send over the properly ordered commands. 
+				// the client send over the properly ordered commands.
 				if (seq > pState.CurrentSequence + 1 || data[i] == nullptr)
 				{
 					clientState.Flags |= CF_MISSING_SEQ;
@@ -1374,7 +1376,7 @@ void NetUpdate(int tics)
 
 		LevelStartDelay = max<int>(LevelStartDelay - tics, 0);
 	}
-		
+
 	bool netGood = Net_UpdateStatus();
 	const int startTic = ClientTic;
 	tics = min<int>(tics, MAXSENDTICS * TicDup);
@@ -1400,7 +1402,7 @@ void NetUpdate(int tics)
 			--SkipCommandAmount;
 			continue;
 		}
-		
+
 		G_BuildTiccmd(&LocalCmds[ClientTic++ % LOCALCMDTICS]);
 		if (TicDup == 1)
 		{
@@ -1765,12 +1767,115 @@ size_t Net_SetEngineInfo(uint8_t*& stream)
 	stream[0] = VER_MAJOR % 256;
 	stream[1] = VER_MINOR % 256;
 	stream[2] = VER_REVISION % 256;
-	return 3u;
+
+	// Send over any loaded files to ensure their checksum is correct.
+	size_t numWads = 0u;
+	size_t bufferIndex = 7u;
+	for (size_t i = 0u; i < fileSystem.GetNumWads(); ++i)
+	{
+		if (fileSystem.IsOptionalResource(i))
+			continue;
+
+		++numWads;
+		const FString crc = fileSystem.GetResourceHash(i);
+		memcpy(&stream[bufferIndex], crc.GetChars(), crc.Len() + 1u);
+		bufferIndex += crc.Len() + 1u;
+	}
+
+	stream[3] = (numWads >> 24);
+	stream[4] = (numWads >> 16);
+	stream[5] = (numWads >> 8);
+	stream[6] = numWads;
+
+	return bufferIndex;
 }
 
-bool Net_VerifyEngine(uint8_t*& stream)
+FVerificationError Net_VerifyEngine(uint8_t*& stream, size_t& offset)
 {
-	return stream[0] == (VER_MAJOR % 256) && stream[1] == (VER_MINOR % 256) && stream[2] == (VER_REVISION % 256);
+	FVerificationError error = {};
+
+	TArray<FString> crcs = {};
+	TArray<FString> names = {};
+	for (size_t i = 0u; i < fileSystem.GetNumWads(); ++i)
+	{
+		if (!fileSystem.IsOptionalResource(i))
+		{
+			crcs.Push(fileSystem.GetResourceHash(i));
+			names.Push(fileSystem.GetResourceFileName(i));
+		}
+	}
+
+	const size_t numWads = (stream[3] << 24) | (stream[4] << 16) | (stream[5] << 8) | stream[6];
+	if (numWads < crcs.Size())
+		error.Error = FVerificationError::VE_FILE_MISSING;
+	else if (numWads > crcs.Size())
+		error.Error = FVerificationError::VE_FILE_UNKNOWN;
+
+	TArray<size_t> unverified = {};
+	for (size_t i = 0u; i < crcs.Size(); ++i)
+		unverified.Push(i);
+
+	offset = 7u;
+	for (size_t i = 0u; i < numWads; ++i)
+	{
+		const FString netCrc = (const char*)&stream[offset];
+		offset += netCrc.Len() + 1u;
+		if (error.Error == FVerificationError::VE_FILE_UNKNOWN)
+		{
+			if (crcs.Find(netCrc) >= crcs.Size())
+				error.UnknownFiles.Push(netCrc);
+		}
+		else if (crcs[i] != netCrc)
+		{
+			const size_t c = crcs.Find(netCrc);
+			if (c >= crcs.Size())
+			{
+				error.Error = FVerificationError::VE_FILE_UNKNOWN;
+				error.UnknownFiles.Push(netCrc);
+			}
+			else
+			{
+				if (error.Error == FVerificationError::VE_NONE)
+					error.Error = FVerificationError::VE_FILE_ORDER;
+				unverified.Delete(unverified.Find(c));
+			}
+		}
+		else
+		{
+			unverified.Delete(unverified.Find(i));
+		}
+	}
+
+	if (error.Error == FVerificationError::VE_FILE_MISSING)
+	{
+		for (auto i : unverified)
+		{
+			FixPathSeperator(names[i]);
+			auto ar = names[i].Split('/', FString::TOK_SKIPEMPTY);
+			error.MissingFiles.Push(ar.Last());
+		}
+	}
+	else if (error.Error == FVerificationError::VE_FILE_ORDER)
+	{
+		error.ExpectedOrder = crcs;
+		// Remove the core and iwad files.
+		error.ExpectedOrder.Delete(0);
+		error.ExpectedOrder.Delete(0);
+	}
+
+	// Intentionally do this last to avoid messing with the above loop.
+	if (stream[0] != (VER_MAJOR % 256) || stream[1] != (VER_MINOR % 256) || stream[2] != (VER_REVISION % 256))
+	{
+		error.Error = FVerificationError::VE_ENGINE;
+		error.Major = VER_MAJOR % 256;
+		error.Minor = VER_MINOR % 256;
+		error.Revision = VER_REVISION % 256;
+		error.NetMajor = stream[0];
+		error.NetMinor = stream[1];
+		error.NetRevision = stream[2];
+	}
+
+	return error;
 }
 
 void Net_SetupUserInfo()
@@ -1852,7 +1957,7 @@ bool D_CheckNetGame()
 	{
 		Printf("Player %d of %d\n", consoleplayer + 1, MaxClients);
 	}
-	
+
 	return true;
 }
 
@@ -1977,7 +2082,7 @@ ADD_STAT(network)
 			out.AppendFormat("\t(MISS CON)");
 
 		out.AppendFormat("\n");
-		
+
 		out.AppendFormat("\tAck: %06d\tConsistency: %06d", state.SequenceAck, state.ConsistencyAck);
 		if (client != Net_Arbitrator)
 			out.AppendFormat("\tAvg latency: %03ums", min<unsigned int>(state.AverageLatency, 999u));
@@ -2091,7 +2196,7 @@ void TryRunTics()
 		ToggleFullscreen = false;
 		AddCommandString("toggle vid_fullscreen");
 	}
-	
+
 	bool doWait = (cl_capfps || pauseext || (!netgame && r_NoInterpolate && !M_IsAnimated()));
 	if (vid_dontdowait && (vid_maxfps > 0 || vid_vsync))
 		doWait = false;
@@ -2130,6 +2235,21 @@ void TryRunTics()
 			lowestSequence = ClientStates[client].CurrentSequence;
 	}
 
+	// Test player prediction code in singleplayer by pretending there is another player
+	// that is running exactly x ticks behind us, emulating having a specific amount of ping
+	if (cl_debugprediction > 0
+		&& !netgame && !demoplayback) // would probably function, but there's no reason to
+	{
+		if (lowestSequence > cl_debugprediction)
+		{
+			lowestSequence -= cl_debugprediction;
+		}
+		else
+		{
+			lowestSequence = 0;
+		}
+	}
+
 	// If the lowest confirmed tic matches the server gametic or greater, allow the client
 	// to run some of them.
 	const int availableTics = (lowestSequence - gametic / TicDup) + 1;
@@ -2142,18 +2262,6 @@ void TryRunTics()
 		CalculateNetStabilityBuffer(availableTics - totalTics);
 		if (totalTics < availableTics - StabilityBuffer)
 			++runTics;
-	}
-
-	// Test player prediction code in singleplayer
-	// by running the gametic behind the ClientTic
-	if (!netgame && !demoplayback && cl_debugprediction > 0)
-	{
-		int debugTarget = ClientTic - cl_debugprediction;
-		int debugOffset = gametic - debugTarget;
-		if (debugOffset > 0)
-		{
-			runTics = max<int>(runTics - debugOffset, 0);
-		}
 	}
 
 	const int worldTimer = primaryLevel->LocalWorldTimer;
@@ -2177,8 +2285,7 @@ void TryRunTics()
 		if (ClientTic > startCommand)
 		{
 			LagState = LAG_PREDICTING;
-			P_UnPredictPlayer();
-			P_PredictPlayer(&players[consoleplayer]);
+			P_PredictClient();
 		}
 
 		// If we actually did have some tics available, make sure the UI
@@ -2187,7 +2294,10 @@ void TryRunTics()
 			P_RunClientSideLogic();
 
 		if (totalTics > 0)
+		{
 			S_UpdateSounds(players[consoleplayer].camera, primaryLevel->LocalWorldTimer - min<int>(primaryLevel->LocalWorldTimer, worldTimer));
+			NetworkEntityManager::VerifyPredictedEntities();
+		}
 
 		return;
 	}
@@ -2200,7 +2310,7 @@ void TryRunTics()
 	LastGameUpdate = EnterTic;
 
 	// Run the available tics.
-	P_UnPredictPlayer();
+	P_UnPredictClient();
 	while (runTics--)
 	{
 		const bool stabilize = ShouldStabilizeTick();
@@ -2223,7 +2333,7 @@ void TryRunTics()
 			break;
 		}
 	}
-	P_PredictPlayer(&players[consoleplayer]);
+	P_PredictClient();
 
 	// These should use the actual tics since they're not actually tied to the gameplay logic.
 	// Make sure it always comes after so the HUD has the correct game state when updating.
@@ -2233,6 +2343,7 @@ void TryRunTics()
 	// Since the level could get reset mid-tick, make sure the smaller of the two values is used
 	// since it should only go up otherwise.
 	S_UpdateSounds(players[consoleplayer].camera, primaryLevel->LocalWorldTimer - min<int>(primaryLevel->LocalWorldTimer, worldTimer));
+	NetworkEntityManager::VerifyPredictedEntities();
 }
 
 void Net_NewClientTic()
@@ -2321,7 +2432,7 @@ void FDynamicBuffer::SetData(const uint8_t *data, int len)
 		m_Len = len;
 		memcpy(m_Data, data, len);
 	}
-	else 
+	else
 	{
 		m_Len = 0;
 	}
@@ -2359,7 +2470,7 @@ static int RemoveClass(FLevelLocals *Level, const PClass *cls)
 			if (!actor->IsMapActor())
 				continue;
 
-			removecount++; 
+			removecount++;
 			actor->ClearCounters();
 			actor->Destroy();
 		}
@@ -2466,7 +2577,7 @@ static void UseFlechette(int player)
 //		at the beginning of the command's actual data.
 void Net_DoCommand(int cmd, TArrayView<uint8_t>& stream, int player)
 {
-	uint8_t pos = 0;
+	int8_t pos = 0;
 	const char* s = nullptr;
 	int i = 0;
 
@@ -2587,7 +2698,7 @@ void Net_DoCommand(int cmd, TArrayView<uint8_t>& stream, int player)
 		// Using LEVEL_NOINTERMISSION tends to throw the game out of sync.
 		// That was a long time ago. Maybe it works now?
 		primaryLevel->flags |= LEVEL_CHANGEMAPCHEAT;
-		primaryLevel->ChangeLevel(s, pos, 0);
+		primaryLevel->ChangeLevel(s, max<int>(pos, 0), pos < 0 ? (CHANGELEVEL_RESETHEALTH | CHANGELEVEL_RESETINVENTORY) : 0);
 		break;
 
 	case DEM_SUICIDE:
@@ -3057,7 +3168,7 @@ void Net_DoCommand(int cmd, TArrayView<uint8_t>& stream, int player)
 	case DEM_USEFLECHETTE:
 		UseFlechette(player);
 		break;
-		
+
 	default:
 		I_Error("Unknown net command: %d", cmd);
 		break;
@@ -3250,7 +3361,7 @@ int Net_GetLatency(int* localDelay, int* arbitratorDelay)
 		severity = 2;
 	else if (gameDelayMs >= 80)
 		severity = 1;
-	
+
 	*localDelay = gameDelayMs;
 	*arbitratorDelay = ClientStates[consoleplayer].AverageLatency;
 	return severity;

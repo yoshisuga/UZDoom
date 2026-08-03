@@ -7,6 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
+#include "basics.h"	// for min(); st_start.h no longer pulls this in transitively
 #include "c_cvars.h"
 #include "st_start.h"
 #include "printf.h"
@@ -31,76 +32,12 @@ void FBasicStartupScreen::Progress(int advance)
 	NSLog(@"FBasicStartupScreen::Progress set progress (%i / %i)",CurPos,MaxPos);
 }
 
-void FBasicStartupScreen::NetInit(const char* const message, const bool host)
-{
-    NSLog(@"FBasicStartupScreen::NetInit: %s playercount=%i", message, host);
-}
-
-void FBasicStartupScreen::NetConnect(const int client, const char* const name, const unsigned flags, const int status) {
-	NSLog(@"FBasicStartupScreen::NetConnect client=%i, name=%s, flags=%u, status=%i", client, name, flags, status);
-}
-
-void FBasicStartupScreen::NetDisconnect(const int client) {
-	
-}
-
-bool FBasicStartupScreen::ShouldStartNet() {
-	return false;
-}
-
-int FBasicStartupScreen::GetNetKickClient()
-{
-	return 0;
-}
-
-int FBasicStartupScreen::GetNetBanClient()
-{
-	return 0;
-}
-
-bool FBasicStartupScreen::NetLoop(bool (*loopCallback)(void*), void* const data)
-{
-	while (true)
-	{
-		if (loopCallback(data))
-		{
-			break;
-		}
-
-		[[NSRunLoop currentRunLoop] limitDateForMode:NSDefaultRunLoopMode];
-
-		// Do not poll to often
-		usleep(50000);
-	}
-
-	return true;
-}
-
-void FBasicStartupScreen::NetProgress(const int cur, const int limit)
-{
-    NSLog(@"FBasicStartupScreen::NetProgress cur= %i, limit=%i",cur,limit);
-}
-
-void FBasicStartupScreen::NetMessage(const char* const message)
-{
-	NSLog(@"FBasicStartupScreen::NetMessage:%s", message);
-}
-
-void FBasicStartupScreen::NetUpdate(const int client, const int status)
-{
-	
-}
-
-void FBasicStartupScreen::NetDone()
-{
-    NSLog(@"FBasicStartupScreen::NetDone");
-}
-
-void FBasicStartupScreen::NetClose()
-{
-//   FConsoleWindow::GetInstance().NetClose();
-  NSLog(@"FBasicStartupScreen::NetClose");
-}
+// NOTE: The FStartupScreen net API (NetInit/NetConnect/NetDisconnect/ShouldStartNet/
+// GetNetKickClient/GetNetBanClient/NetLoop/NetProgress/NetMessage/NetUpdate/NetDone/
+// NetClose) was removed upstream when the netgame lobby moved to ZWidget. The iOS
+// implementations that used to live here — including the IOS_ShowSystemModal /
+// IOS_SpinRunLoop / Bonjour hooks — no longer have a base-class call site and were
+// dropped. iOS multiplayer needs to be rebuilt against the new lobby.
 
 
 // ---------------------------------------------------------------------------

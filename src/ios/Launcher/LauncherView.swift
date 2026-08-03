@@ -421,6 +421,9 @@ struct LauncherView: View {
   #endif
   
   static let currentVersion = "2026.1.0"
+
+  // UZDoom engine version this was built from (src/version.h).
+  static let versionFooter = "Core: \(IOSUtils.engineVersion())"
   
   #if ZERO
   private var fadingTexts = [
@@ -444,7 +447,7 @@ struct LauncherView: View {
             #if ZERO
             Text(purchaseModel.isPurchased ? "GenZD" : "GenZD Zero").font(.largeTitle).foregroundColor(.red)
             #else
-            Text("GenZD-UZ").font(.largeTitle).foregroundColor(.red)
+            Text("GenZD-UZ2").font(.largeTitle).foregroundColor(.red)
             #endif
             Spacer()
           }
@@ -497,7 +500,15 @@ struct LauncherView: View {
       LauncherConfigsView(viewModel: viewModel, showToast: $showToast, sortMode: $launchConfigSortOrder).padding(.bottom)
 
       FadingTextView(texts: fadingTexts)
-      
+
+      HStack {
+        Spacer()
+        Text(Self.versionFooter)
+          .font(.small)
+          .foregroundColor(.gray)
+          .padding(.trailing, 8)
+      }
+
     }.toast(isPresenting: $showToast) {
       AlertToast(type: .complete(.green), title: "Loaded Saved Configuration", style: AlertToast.AlertStyle.style(titleColor: .gray, titleFont: .small))
     }.padding([.bottom], 4)

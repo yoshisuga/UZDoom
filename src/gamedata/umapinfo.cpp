@@ -13,18 +13,16 @@
 **
 **---------------------------------------------------------------------------
 **
-** An optional, multi-line description, covering whatever else you need to
-** describe in order for people to contribute to this file
+**
 */
 
 #include <stdlib.h>
 #include <string.h>
-#include "filesystem.h"
-#include "g_level.h"
-#include "r_defs.h"
-#include "p_setup.h"
-#include "gi.h"
+
 #include "cmdlib.h"
+#include "g_mapinfo.h"
+#include "gi.h"
+#include "r_defs.h"
 
 FName MakeEndPic(const char *string);
 
@@ -543,13 +541,7 @@ void CommitUMapinfo(level_info_t *defaultinfo)
 		if (map.enteranim[0]) levelinfo->EnterAnim = map.enteranim;
 		if (map.exitanim[0]) levelinfo->ExitAnim = map.exitanim;
 		levelinfo->id24_levelnum = map.id24_levelnum;
-		/* UMAPINFO's intermusic is for the text screen, not the summary.
-		if (map.intermusic[0])
-		{
-			levelinfo->InterMusic = map.intermusic;
-			levelinfo->intermusicorder = 0;
-		}
-		*/
+
 		if (map.BossActions.Size() > 0 || map.BossCleared)
 		{
 			// Setting a boss action will deactivate the flag based monster actions.
@@ -558,21 +550,23 @@ void CommitUMapinfo(level_info_t *defaultinfo)
 			levelinfo->flags3 &= ~(LEVEL3_E1M8SPECIAL | LEVEL3_E2M8SPECIAL | LEVEL3_E3M8SPECIAL | LEVEL3_E4M8SPECIAL | LEVEL3_E4M6SPECIAL);
 		}
 
+		// UMAPINFO's intermusic is for the text screen, not the summary.
 		const int exflags = FExitText::DEF_TEXT | FExitText::DEF_BACKDROP | FExitText::DEF_MUSIC;
 		if (map.InterText.IsNotEmpty())
 		{
 			if (map.InterText.Compare("-") != 0)
-				levelinfo->ExitMapTexts[NAME_Normal] = { exflags, 0, map.InterText, map.interbackdrop, map.intermusic[0]? map.intermusic : gameinfo.intermissionMusic };
+				levelinfo->ExitMapTexts[NAME_Normal] = { exflags, 0, map.InterText, map.interbackdrop, map.intermusic[0] ? map.intermusic : gameinfo.finaleMusic };
 			else
 				levelinfo->ExitMapTexts[NAME_Normal] = { 0, 0 };
 		}
 		if (map.InterTextSecret.IsNotEmpty())
 		{
 			if (map.InterTextSecret.Compare("-") != 0)
-				levelinfo->ExitMapTexts[NAME_Secret] = { exflags, 0, map.InterTextSecret, map.interbackdrop, map.intermusic[0] ? map.intermusic : gameinfo.intermissionMusic };
+				levelinfo->ExitMapTexts[NAME_Secret] = {exflags, 0, map.InterTextSecret, map.interbackdrop, map.intermusic[0] ? map.intermusic : gameinfo.finaleMusic };
 			else
 				levelinfo->ExitMapTexts[NAME_Secret] = { 0, 0 };
 		}
+
 		if (map.nointermission) levelinfo->flags |= LEVEL_NOINTERMISSION;
 		if (!(levelinfo->flags2 & LEVEL2_NEEDCLUSTERTEXT)) levelinfo->flags2 |= LEVEL2_NOCLUSTERTEXT;	// UMAPINFO should ignore cluster intermission texts.
 		switch (map.jumping)
@@ -584,6 +578,9 @@ void CommitUMapinfo(level_info_t *defaultinfo)
 			case PlayerActionOption::DISALLOW:
 				levelinfo->flags |= LEVEL_JUMP_NO;
 				break;
+			case PlayerActionOption::UNSET:
+				// noop
+				break;
 		}
 		switch (map.crouching)
 		{
@@ -593,6 +590,9 @@ void CommitUMapinfo(level_info_t *defaultinfo)
 				break;
 			case PlayerActionOption::DISALLOW:
 				levelinfo->flags |= LEVEL_CROUCH_NO;
+				break;
+			case PlayerActionOption::UNSET:
+				// noop
 				break;
 		}
 		switch (map.freeaim)
@@ -607,6 +607,9 @@ void CommitUMapinfo(level_info_t *defaultinfo)
 			case PlayerActionOption::DISALLOW:
 				levelinfo->flags |= LEVEL_FREELOOK_NO;
 				levelinfo->flags &= ~LEVEL_FREELOOK_YES;
+				break;
+			case PlayerActionOption::UNSET:
+				// noop
 				break;
 		}
 	}

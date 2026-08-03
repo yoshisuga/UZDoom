@@ -1,51 +1,52 @@
 cmake_minimum_required( VERSION 3.16 )
 
-if( COMMAND cmake_policy )
-	if( POLICY CMP0011 )
-		cmake_policy( SET CMP0011 NEW )
-	endif()
-	if( POLICY CMP0054 )
-		cmake_policy( SET CMP0054 NEW )
-	endif()
-	if ( POLICY CMP0067 )
-		cmake_policy( SET CMP0067 NEW )
-	endif()
-	if ( POLICY CMP0091 )
-		cmake_policy( SET CMP0091 NEW )
-		set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-	endif()
-endif()
-
-if (LIBVPX_VCPKG)
-	list(APPEND VCPKG_MANIFEST_FEATURES "vcpkg-libvpx")
-endif()
-
-if (OPENAL_SOFT_VCPKG)
-	list(APPEND VCPKG_MANIFEST_FEATURES "vcpkg-openal-soft")
-endif()
-
-if (CMAKE_SYSTEM_NAME STREQUAL "Windows" OR (NOT CMAKE_SYSTEM_NAME AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows"))
-	# Force static triplet on Windows
-	set(VCPKG_TARGET_TRIPLET "x64-windows-static")
-endif()
+cmake_policy( SET CMP0067 NEW )
+cmake_policy( SET CMP0091 NEW )
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 project(UZDoom)
-
-if (WIN32 AND VCPKG_TOOLCHAIN)
-	option(LIBVPX_VCPKG "Use libvpx from vcpkg" OFF)
-endif()
-
-if (VCPKG_TOOLCHAIN)
-	option(OPENAL_SOFT_VCPKG "Use OpenAL from vcpkg" OFF)
-endif()
-
-if (NOT VCPKG_TOOLCHAIN)
-	set(VCPKG_MANIFEST_FEATURES)
-endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(ABSL_BUILD_TESTING OFF) # don't build/run abseil tests
+
+# make all targets use LTO - want to do this early in the cmake to ensure it applies to any targets
+option( FORCE_NO_LTO "Turn off LTO even if it would be possible to use it." NO )
+
+if(NOT FORCE_NO_LTO)
+	include(CheckIPOSupported)
+	check_ipo_supported(RESULT ipo_supported OUTPUT ipo_error)
+	if( ipo_supported )
+		message(STATUS "Using LTO on Release and RelWithDebInfo build types")
+		set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+		set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO TRUE)
+	else()
+		message(STATUS "Not using LTO because unsupported: ${ipo_error}")
+	endif()
+endif()
+
+if(WIN32)
+	option( USE_UPDATER "enable auto-updater" OFF )
+endif()
+
+if(USE_UPDATER)
+	set( CURL_REQUIRED TRUE )
+
+	if (WIN32)
+		option( LOAD_CURL_AT_RUNTIME "load curl at runtime instead of linking" ON )
+
+		if (NOT MSVC)
+			# NOTE: not a big issue for now but will need to be fixed if we switch over to mingw as the
+			#       primary windows compiler (which we'll probably have to do eventually for C++26 support)
+			message( FATAL_ERROR "updater.exe currently only builds with msvc" )
+		endif()
+		add_executable( updater WIN32 src/win32/updater.c )
+	else()
+		message( FATAL_ERROR "Updater not available on this platform" )
+	endif()
+endif()
 
 find_package(Threads REQUIRED)
 find_package(Python3 3.6 REQUIRED)
@@ -68,9 +69,14 @@ if(CMAKE_CROSSCOMPILING)
 endif()
 
 # Recursive function to place PK3 archive source files into a hierarchy of source file in the IDE
-function( assort_pk3_source_folder FOLDER_NAME PK3_DIR )
+function( assort_pk3_source_folder FOLDER_NAME )
 	# Assort source files into folders in the IDE
-	file(GLOB PK3_SRCS ${PK3_DIR}/*) # Create list of all files in this folder
+	# Create wildcard patterns for all directories
+	set(PK3_PATTERNS)
+	foreach(PK3_DIR ${ARGN})
+		list(APPEND PK3_PATTERNS "${PK3_DIR}/*")
+	endforeach()
+	file(GLOB PK3_SRCS ${PK3_PATTERNS}) # Create list of all files in these folders
 	foreach(PK3_SRC ${PK3_SRCS})
 		# If there are subfolders, recurse into them
 		if(IS_DIRECTORY ${PK3_SRC})
@@ -90,19 +96,24 @@ if( PK3_QUIET_ZIPDIR )
 	set( PK3_ZIPDIR_OPTIONS "-q" )
 endif()
 
-# Simplify pk3 building, add_pk3(filename srcdirectory)
-function( add_pk3 PK3_NAME PK3_DIR )
+# Simplify pk3 building, add_pk3(filename srcdirectory [srcdirectory2 ...])
+function( add_pk3 PK3_NAME )
 	# Generate target name. Just use "pk3" for main pk3 target.
 	string( REPLACE "." "_" PK3_TARGET ${PK3_NAME} )
 
 	add_custom_command( OUTPUT ${ZDOOM_OUTPUT_DIR}/${PK3_NAME}
-		COMMAND zipdir -udf ${PK3_ZIPDIR_OPTIONS} ${ZDOOM_OUTPUT_DIR}/${PK3_NAME} ${PK3_DIR}
+		COMMAND zipdir -udf ${PK3_ZIPDIR_OPTIONS} ${ZDOOM_OUTPUT_DIR}/${PK3_NAME} ${ARGN}
 		DEPENDS zipdir )
 
 	# Create a list of source files for this PK3, for use in the IDE
 	# Phase 1: Create a list of all source files for this PK3 archive, except
 	#  for a couple of strife image file names that confuse CMake.
-	file(GLOB_RECURSE PK3_SRCS ${PK3_DIR}/*)
+	# Create wildcard patterns for all directories
+	set(PK3_PATTERNS)
+	foreach(PK3_DIR ${ARGN})
+		list(APPEND PK3_PATTERNS "${PK3_DIR}/*")
+	endforeach()
+	file(GLOB_RECURSE PK3_SRCS ${PK3_PATTERNS})
 	# Exclude from the source list some files with brackets in the
 	# file names here, because they confuse CMake.
 	# This only affects the list of source files shown in the IDE.
@@ -127,24 +138,14 @@ function( add_pk3 PK3_NAME PK3_DIR )
 		SOURCES ${PK3_SRCS})
 
 	# Phase 3: Assign source files to a nice folder structure in the IDE
-	assort_pk3_source_folder("Source Files" ${PK3_DIR})
+	assort_pk3_source_folder("Source Files" ${ARGN})
 
 	# Phase 4: Create separate copy step, in order to make zdoom depend on pk3s without creating cycle
-	if(DEFINED CMAKE_RUNTIME_OUTPUT_DIRECTORY)
-		set(DEST_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
-	elseif(WIN32)
-		set(DEST_DIR "${PROJECT_BINARY_DIR}/$<CONFIG>")
-	elseif(APPLE)
-		set(DEST_DIR "${PROJECT_BINARY_DIR}/${ZDOOM_EXE_NAME}.app/Contents/Resources")
-	else()
-		set(DEST_DIR "${PROJECT_BINARY_DIR}")
-	endif()
-
 	set(COPY_TARGET_NAME "${PK3_TARGET}_copy")
 	add_custom_target(${COPY_TARGET_NAME} ALL
 		COMMAND ${CMAKE_COMMAND} -E copy_if_different
 			"${ZDOOM_OUTPUT_DIR}/${PK3_NAME}"
-			"${DEST_DIR}/${PK3_NAME}"
+			"${ZDOOM_RESOURCE_DIR}/${PK3_NAME}"
 		DEPENDS ${PK3_TARGET}
 	)
 	add_dependencies(zdoom ${COPY_TARGET_NAME})
@@ -160,22 +161,16 @@ function( add_pk3 PK3_NAME PK3_DIR )
 		COMPONENT "Game resources")
 endfunction()
 
-macro( generate_language_files target destination )
+macro( generate_language_files target destination identifier )
 	# right now, this dumps temp files into the source tree and deletes them after build
 	# This should be re-worked to dump stuff into the build tree instead
 	set(lang_script "${CMAKE_CURRENT_SOURCE_DIR}/../libraries/Translation/scripts/compile.py")
 	set(lang_dst "${CMAKE_CURRENT_SOURCE_DIR}/${destination}")
 	set(lang_target "${target}_${destination}")
 
-	set(lang_sources_list "")
-	set(sources ${ARGN})
-	foreach( source_item ${sources} )
-		list(APPEND lang_sources_list "${CMAKE_CURRENT_SOURCE_DIR}/../libraries/Translation/${source_item}")
-	endforeach()
-
 	string( REGEX REPLACE "[^a-zA-Z0-9]" "_" lang_target ${lang_target} )
 
-	add_custom_target(${lang_target} COMMAND Python3::Interpreter -B -E -s "${lang_script}" ${lang_sources_list} "${lang_dst}")
+	add_custom_target(${lang_target} COMMAND Python3::Interpreter -B -E -s "${lang_script}" --recipe ${identifier} --output "${lang_dst}")
 	add_dependencies(${target} ${lang_target})
 	add_custom_command(TARGET ${target} POST_BUILD COMMAND ${CMAKE_COMMAND} -E remove "${lang_dst}")
 endmacro()
@@ -198,6 +193,16 @@ ENDIF()
 
 set( ZDOOM_OUTPUT_DIR ${CMAKE_BINARY_DIR} CACHE PATH "Directory where zdoom.pk3 and the executable will be created." )
 set( ZDOOM_EXE_NAME "uzdoom" CACHE FILEPATH "Name of the executable to create" )
+
+if(DEFINED CMAKE_RUNTIME_OUTPUT_DIRECTORY)
+	set(ZDOOM_RESOURCE_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+elseif(WIN32)
+	set(ZDOOM_RESOURCE_DIR "${PROJECT_BINARY_DIR}/$<CONFIG>")
+elseif(APPLE)
+	set(ZDOOM_RESOURCE_DIR "${PROJECT_BINARY_DIR}/${ZDOOM_EXE_NAME}.app/Contents/Resources")
+else()
+	set(ZDOOM_RESOURCE_DIR "${PROJECT_BINARY_DIR}")
+endif()
 
 # Replacement variables for a possible long list of C/C++ compilers compatible with GCC
 if( "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_C_COMPILER_ID}" MATCHES "Clang" )
@@ -229,7 +234,6 @@ macro( use_fast_math )
 	set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ZD_FASTMATH_FLAG}" )
 endmacro()
 
-
 include( CheckFunctionExists )
 
 macro( gz_require_stricmp )
@@ -260,11 +264,20 @@ option( NO_OPENAL "Disable OpenAL sound support" OFF )
 
 find_package( BZip2 )
 find_package( VPX )
-if (NOT FORCE_INTERNAL_CPPDAP)
-	find_package( cppdap CONFIG )
-endif()
-if (NOT FORCE_INTERNAL_ZMUSIC)
-	find_package( ZMusic )
+
+if (CURL_REQUIRED)
+	find_package( CURL )
+	if( MSVC AND NOT CURL_FOUND )
+		# Use prebuilt library
+		if ( ARM64 )
+			set( CURL_ROOT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/bin/Windows/curl/arm64" )
+		else()
+			set( CURL_ROOT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/bin/Windows/curl/x64" )
+		endif()
+		set( CURL_INCLUDE_DIRS ${CURL_ROOT_PATH}/include )
+		set( CURL_LIBRARIES ${CURL_ROOT_PATH}/lib/libcurl.dll.a )
+		set( CURL_FOUND TRUE )
+	endif()
 endif()
 
 include( TargetArch )
@@ -281,13 +294,6 @@ if( APPLE )
 else()
 	option (HAVE_GLES2 "Enable GLES2 support" ON)
 endif()
-
-# no, we're not using external asmjit for now, we made too many modifications to our's.
-# if the asmjit author uses our changes then we'll update this.
-
-#if( ${HAVE_VM_JIT} )
-#	find_package( asmjit )
-#endif()
 
 if( MSVC )
 	# Eliminate unreferenced functions and data
@@ -310,8 +316,6 @@ if( MSVC )
 	# Use SSE 2 as minimum always as the true color drawers needs it for __vectorcall
 	#set( ALL_C_FLAGS "${ALL_C_FLAGS} /arch:SSE2") # This is already the default
 
-
-
 	# Avoid CRT DLL dependancies in release builds, optionally generate assembly output for checking crash locations.
 	option( ZDOOM_GENERATE_ASM "Generate assembly output." OFF )
 	if( ZDOOM_GENERATE_ASM )
@@ -320,14 +324,21 @@ if( MSVC )
 		set( REL_C_FLAGS "/Oy /Oi /GS-" )
 	endif()
 
-
 	# Debug allocations in debug builds
 	set( DEB_C_FLAGS "/D _CRTDBG_MAP_ALLOC" )
 
 	# Disable warnings for unsecure CRT functions from VC8+
 	set( ALL_C_FLAGS "${ALL_C_FLAGS} /DUNICODE /D_UNICODE /D_WIN32_WINNT=0x0600 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS" )
 
-	string(REPLACE "/Ob1 " "/Ob2 " CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO} )
+	if( WITH_ASAN )
+		set( ALL_C_FLAGS "${ALL_C_FLAGS} /fsanitize=address" )
+	endif()
+
+	string(REPLACE "/Ob1 " "/Ob2 " CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}" )
+	string(REPLACE "/Zi" "/Z7" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+	string(REPLACE "/Zi" "/Z7" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+	string(REPLACE "/Zi" "/Z7" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
+	string(REPLACE "/Zi" "/Z7" CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
 else()
 	set( REL_LINKER_FLAGS "" )
 	set( ALL_C_FLAGS "-ffp-contract=off" )
@@ -398,25 +409,32 @@ if( NO_ASSERTS )
 endif()
 
 option(FORCE_INTERNAL_BZIP2 "Use internal bzip2")
-option(FORCE_INTERNAL_ZMUSIC "Use internal zmusic" ON)
-option(FORCE_INTERNAL_ASMJIT "Use internal asmjit" ON)
 option(FORCE_INTERNAL_CPPDAP "Use internal cppdap" ON)
-
-mark_as_advanced( FORCE_INTERNAL_ASMJIT )
 
 if (HAVE_VULKAN)
 	add_subdirectory( libraries/ZVulkan )
+endif()
+
+if( MSVC )
+	set(ABSL_MSVC_STATIC_RUNTIME ON)
+endif()
+add_subdirectory( libraries/abseil )
+
+# GenZD Custom: ZWidget is configured long before src/ios/genzd_target_config.cmake runs,
+# so without this its find_package(SDL2) picks up a host/Homebrew SDL that is unusable when
+# cross-compiling for iOS. bin/iOS/sdl/SDL2 is a symlink to include/, so pointing at the
+# parent makes upstream's <SDL2/SDL.h> form resolve; include/ is kept for the flat form.
+if(IOS OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
+	set(SDL2_FOUND TRUE)
+	set(SDL2_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/bin/iOS/sdl" CACHE PATH "iOS SDL2 include root" FORCE)
+	set(SDL2_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/bin/iOS/sdl;${CMAKE_SOURCE_DIR}/bin/iOS/sdl/include" CACHE STRING "iOS SDL2 include dirs" FORCE)
+	set(SDL2_LIBRARY "${CMAKE_SOURCE_DIR}/bin/iOS/sdl/libSDL2.a" CACHE STRING "iOS SDL2 library" FORCE)
 endif()
 
 set(ZWIDGET_BUILD_EXAMPLE OFF CACHE INTERNAL "" FORCE)
 add_subdirectory( libraries/ZWidget )
 
 add_subdirectory( libraries/webp )
-
-add_subdirectory( libraries/discordrpc EXCLUDE_FROM_ALL )
-set( DRPC_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libraries/discordrpc/include" )
-set( DRPC_LIBRARIES discord-rpc )
-set( DRPC_LIBRARY discord-rpc )
 
 if( HAVE_VM_JIT AND UNIX )
 	check_symbol_exists( "backtrace" "execinfo.h" HAVE_BACKTRACE )
@@ -433,16 +451,10 @@ if( HAVE_VM_JIT AND UNIX )
 endif( HAVE_VM_JIT AND UNIX )
 
 if( ${HAVE_VM_JIT} )
-	if( ASMJIT_FOUND AND NOT FORCE_INTERNAL_ASMJIT )
-		message( STATUS "Using system asmjit, includes found at ${ASMJIT_INCLUDE_DIR}" )
-	else()
-		message( STATUS "Using internal asmjit" )
-		set( SKIP_INSTALL_ALL TRUE ) # Avoid installing asmjit alongside zdoom
-		add_subdirectory( libraries/asmjit )
-		set( ASMJIT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libraries/asmjit )
-		set( ASMJIT_LIBRARIES asmjit )
-		set( ASMJIT_LIBRARY asmjit )
-	endif()
+	set( SKIP_INSTALL_ALL TRUE ) # Avoid installing asmjit alongside zdoom
+	add_subdirectory( libraries/asmjit )
+	set( ASMJIT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libraries/asmjit )
+	set( ASMJIT_LIBRARIES asmjit )
 endif()
 
 if( BZIP2_FOUND AND NOT FORCE_INTERNAL_BZIP2 )
@@ -467,18 +479,11 @@ else()
 endif()
 
 # ZMUSIC
-if( ZMUSIC_FOUND AND NOT FORCE_INTERNAL_ZMUSIC )
-	message( STATUS "Using system zmusic library, includes found at ${ZMUSIC_INCLUDE_DIR}" )
-	set( ZMUSIC_SYSTEM_INSTALL TRUE )
-else()
-	message( STATUS "Using internal zmusic library" )
-	set( BUILD_SHARED_LIBS OFF CACHE INTERNAL "" FORCE )
-	add_subdirectory( libraries/ZMusic )
-	set( ZMUSIC_ROOT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/zmusic" )
-	set( ZMUSIC_INCLUDE_DIR ${ZMUSIC_ROOT_PATH}/include )
-	set( ZMUSIC_LIBRARIES zmusic )
-	set( ZMUSIC_FOUND TRUE )
-endif()
+set( BUILD_SHARED_LIBS OFF CACHE INTERNAL "" FORCE )
+add_subdirectory( libraries/ZMusic )
+set( ZMUSIC_ROOT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/zmusic" )
+set( ZMUSIC_INCLUDE_DIR ${ZMUSIC_ROOT_PATH}/include )
+set( ZMUSIC_LIBRARIES zmusic )
 
 set( LZMA_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libraries/lzma/C" )
 
@@ -499,6 +504,7 @@ install(DIRECTORY docs/
 		COMPONENT "Documentation")
 
 option( DYN_OPENAL "Dynamically load OpenAL" ON )
+option( BUILD_NONFREE "Build non-free assets used by commercial games" ON )
 
 add_subdirectory( src )
 add_subdirectory( libraries/lzma )

@@ -54,6 +54,10 @@ We favour contributions that align with our core values:
 - **Stability**:
   Maintaining backwards compatibility.
 
+When contributing text strings, you will need to use Weblate.
+- Engine text: https://hosted.weblate.org/engage/uzdoom/
+- IWAD text: https://hosted.weblate.org/engage/doom-engine-games/
+
 ## Art Contributions
 
 By submitting a pull request, you agree to follow these guidelines.
@@ -65,12 +69,12 @@ By submitting a pull request, you agree to follow these guidelines.
   This can include CC0 (public domain) work.
 - **Ownership**:
   You certify that you created the asset yourself or have the legal right
-  to contribute it under the your chosen license.
+  to contribute it under your chosen license.
 - **Attribution**:
   All contributions must have an easily followed lineage.
   When editing files, no previous attribution will be removed.
 - **Noncommercial Assets**:
-  Assets bound by a noncommercial license, will be placed in wadsrc_extra.
+  Assets bound by a noncommercial license will be placed in wadsrc_extra.
 - **Derived Assets**:
   Derived assets must retain their original license and must only be used
   in the games from which they are originally derived from.
@@ -78,7 +82,12 @@ By submitting a pull request, you agree to follow these guidelines.
 
 ### AI Generated Art
 
-Absolutely no AI generated art may be submitted to this project.
+No AI generated art of any kind may be submitted. This includes but is not limited to:
+- Art created by generative AI.
+- Modifications or tracings of art created by generative AI.
+- Art modified by generative AI (e.g. filters).
+
+Art generated and modified through traditional algorithmic means is allowed. Asking for clarification is best if unsure. Any undisclosed use of generative AI will result in an organization-wide ban.
 
 ## Code Contributions
 
@@ -108,12 +117,16 @@ all contributors must adhere to the following:
 
 ### AI Generated Code
 
-As LLMs are trained on unknown scraped data, no code generated entirely
-by an LLM may be submitted. AI may be used as a brainstorming or
-debugging aid, but all submitted code must be fundamentally authored
-and understood by the contributor to ensure it meets our quality and
-licensing standards. Code generated through a traditional mechanical
-processes is not considered AI generated.
+No AI generated code of any kind may be submitted. This includes but is not limited to:
+- Code created by generative AI.
+- Modifications of code created by generative AI.
+- Code modified by generative AI (e.g. having it fix bugs in your code).
+- Code created with generative AI assistance (i.e. having the generative AI tell you what code to create).
+- Comments created with the assistance of generative AI.
+
+Code generated and modified through traditional algorithmic means is allowed. Asking for clarification is best if unsure. Any undisclosed use of generative AI will result in an organization-wide ban.
+
+When creating commit and pull request messages, authors are expected to use their own words and not generative AI. You may be asked to explain your contributions, and failure to do so will result in rejection.
 
 ### Testing
 

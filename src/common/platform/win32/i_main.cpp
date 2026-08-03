@@ -122,10 +122,11 @@ DWORD			MainThreadID;
 HANDLE			StdOut;
 bool			FancyStdOut, AttachedStdOut;
 
-// use custom here, because types are confusing sometimes
-FARG_CUSTOM(stdout, "-stdout", "Debug", false, "Print output to system console", "",
+FARG(cli, "Debug", "Print output to system console", "",
 	"(Win32 only)\nSends all output to a system console. Unix and MacOS builds of ZDoom will"
 	" always do that.");
+// use custom here, because types are confusing sometimes
+FARG_CUSTOM(stdout, "-stdout", "Debug", true, "Alias of -cli", "", "");
 
 // CODE --------------------------------------------------------------------
 
@@ -218,7 +219,8 @@ int DoMain (HINSTANCE hInstance)
 		}
 	}
 	else if (
-		Args->CheckParm(FArg_stdout)
+		Args->CheckParm(FArg_cli)
+		|| Args->CheckParm(FArg_stdout)
 		|| Args->CheckParm(FArg_norun)
 		|| Args->CheckParm(FArg_help)
 		|| Args->CheckParm(FArg_h)
@@ -338,7 +340,59 @@ int DoMain (HINSTANCE hInstance)
 		HMODULE hModule = GetModuleHandleW(NULL);
 		WCHAR path[MAX_PATH];
 		GetModuleFileNameW(hModule, path, MAX_PATH);
-		ShellExecuteW(NULL, L"open", path, GetCommandLineW(), NULL, SW_SHOWNORMAL);
+
+		// [Sal] The exe name is an argument, too.
+		// We have to manually skip it when using GetCommandLineW.
+		// (I am making my distaste for this feature known)
+		const WCHAR *cmd_line = GetCommandLineW();
+
+		while (*cmd_line == ' ' || *cmd_line == '\t')
+		{
+			// skip leading whitespace
+			*cmd_line++;
+		}
+
+		if (*cmd_line == '"')
+		{
+			// skip opening quote
+			*cmd_line++;
+
+			// skip until reaching another quote
+			while (*cmd_line)
+			{
+				if (*cmd_line == '"')
+				{
+					// skip the closing quote
+					*cmd_line++;
+					break;
+				}
+
+				*cmd_line++;
+			}
+		}
+		else
+		{
+			// skip until reaching whitespace
+			while (*cmd_line)
+			{
+				if (*cmd_line == ' ' || *cmd_line == '\t')
+				{
+					break;
+				}
+
+				*cmd_line++;
+			}
+		}
+
+		while (*cmd_line == ' ' || *cmd_line == '\t')
+		{
+			// skip EVEN MORE whitespace
+			*cmd_line++;
+		}
+
+		// cmd_line should be at the first real argument now!
+
+		ShellExecuteW(nullptr, L"open", path, cmd_line, nullptr, SW_SHOWNORMAL);
 	}
 
 	DestroyCustomCursor();
@@ -545,7 +599,7 @@ CUSTOM_CVAR(Bool, disablecrashlog, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 int wmain()
 {
-    return wWinMain(GetModuleHandle(0), 0, GetCommandLineW(), SW_SHOW);
+	return wWinMain(GetModuleHandle(0), 0, GetCommandLineW(), SW_SHOW);
 }
 
 int WINAPI wWinMain (HINSTANCE hInstance, HINSTANCE nothing, LPWSTR cmdline, int nCmdShow)

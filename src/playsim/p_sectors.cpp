@@ -40,6 +40,8 @@
 #include "g_levellocals.h"
 #include "vm.h"
 #include "texturemanager.h"
+#include "i_time.h"
+#include "m_round.h"
 
 //==========================================================================
 //
@@ -98,23 +100,59 @@ DEFINE_ACTION_FUNCTION_NATIVE(_Sector, NextSpecialSector, P_NextSpecialSector)
 	ACTION_RETURN_POINTER(P_NextSpecialSector(self, type, nogood));
 }
 
-bool sector_t::IsDangerous(const DVector3& pos, double height) const
+static bool IsDamaging(sector_t& sec, int moTID)
 {
-	if (damageamount > 0)
+	static const int DamageTime = GameTicRate * 5;
+	// If damaging was manually done within the past 5 seconds, consider it unsafe. Good for capturing looping
+	// manual damage map scripts.
+	if (sec.damageamount > 0 || (sec.LastDamage >= 0 && sec.Level->maptime - sec.LastDamage <= DamageTime))
 		return true;
 
-	auto cl = dyn_cast<DCeiling>(ceilingdata.Get());
+	// Check for any sector actions that might eventually lead to it dealing damage in some way.
+	// TODO: This needs to verify that 214's passed tag is this sector's. Currently there's no
+	// easy way to get this as sectors can have multiple tags.
+	for (AActor* secAct = sec.SecActTarget; secAct != nullptr; secAct = secAct->tracer)
+	{
+		if ((secAct->special == 73 && secAct->args[0] >= 0)
+			|| (secAct->special == 119 && secAct->args[1] > 0 && (!secAct->args[0] || secAct->args[1] == moTID))
+			|| (secAct->special == 214 && secAct->args[1] > 0))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static bool IsCrushing(sector_t& sec)
+{
+	auto cl = dyn_cast<DCeiling>(sec.ceilingdata.Get());
 	if (cl != nullptr && cl->getCrush() > 0)
+		return true;
+
+	auto fl = dyn_cast<DFloor>(sec.floordata.Get());
+	return fl != nullptr && fl->m_Crush > 0;
+}
+
+bool sector_t::IsDangerous(const DVector3& pos, double height, int moTID)
+{
+	if (IsDamaging(*this, moTID) || IsCrushing(*this))
 		return true;
 
 	for (auto rover : e->XFloor.ffloors)
 	{
-		if ((rover->flags & FF_EXISTS) && rover->model->damageamount > 0
+		if (!(rover->flags & FF_EXISTS))
+			continue;
+
+		if (IsDamaging(*rover->model, moTID)
 			&& pos.Z <= rover->top.plane->ZatPoint(pos)
 			&& pos.Z + height >= rover->bottom.plane->ZatPoint(pos))
 		{
 			return true;
 		}
+
+		if ((rover->flags & FF_SOLID) && IsCrushing(*rover->model))
+			return true;
 	}
 
 	return false;
@@ -618,7 +656,7 @@ sector_t *FindModelCeilingSector (sector_t *sect, double floordestheight)
 int FindMinSurroundingLight (const sector_t *sector, int min)
 {
 	sector_t*	check;
-		
+
 	for (auto line : sector->Lines)
 	{
 		if (NULL != (check = getNextSector (line, sector)) &&
@@ -917,6 +955,9 @@ void TransferSpecial(sector_t *sector, sector_t *model)
 	sector->damageinterval = model->damageinterval;
 	sector->leakydamage = model->leakydamage;
 	sector->Flags = (sector->Flags&~SECF_SPECIALFLAGS) | (model->Flags & SECF_SPECIALFLAGS);
+	// According to https://forum.zdoom.org/viewtopic.php?style=21&t=80227 this probably should be only for Doom
+	if ((compatflags2 & COMPATF2_TRANSFERSECRET || sv_autocompat) && gameinfo.gametype == GAME_Doom && model->isSecret())
+		sector->Flags |= SECF_SECRET;
 }
 
 //=====================================================================================
@@ -1019,7 +1060,7 @@ double NextHighestCeilingAt(sector_t *sec, double x, double y, double bottomz, d
 			double delta2 = topz - (ff_bottom + ((ff_top - ff_bottom) / 2));
 
 			if (ff_bottom < realceil && fabs(delta1) > fabs(delta2))
-			{ 
+			{
 				if (resultsec) *resultsec = sec;
 				if (resultffloor) *resultffloor = rover;
 				return ff_bottom;
@@ -1093,14 +1134,14 @@ double NextLowestFloorAt(sector_t *sec, double x, double y, double z, int flags,
 
 //===========================================================================
 //
-// 
+//
 //
 //===========================================================================
 
 double GetFriction(const sector_t *self, int plane, double *pMoveFac)
 {
-	if (self->Flags & SECF_FRICTION) 
-	{ 
+	if (self->Flags & SECF_FRICTION)
+	{
 		if (pMoveFac) *pMoveFac = self->movefactor;
 		return self->friction;
 	}
@@ -1119,7 +1160,7 @@ double GetFriction(const sector_t *self, int plane, double *pMoveFac)
 
  //===========================================================================
  //
- // 
+ //
  //
  //===========================================================================
 
@@ -1321,7 +1362,7 @@ double GetFriction(const sector_t *self, int plane, double *pMoveFac)
 
 //===========================================================================
 //
-// 
+//
 //
 //===========================================================================
 
@@ -1343,7 +1384,7 @@ double GetFriction(const sector_t *self, int plane, double *pMoveFac)
 
 //===========================================================================
 //
-// 
+//
 //
 //===========================================================================
 
@@ -1563,7 +1604,7 @@ int side_t::GetLightLevel (bool foggy, int baselight, int which, bool is3dlight,
 			if (((sector->Level->flags2 & LEVEL2_SMOOTHLIGHTING) || (Flags & WALLF_SMOOTHLIGHTING) || r_fakecontrast == 2) &&
 				delta.X != 0)
 			{
-				rel = xs_RoundToInt // OMG LEE KILLOUGH LIVES! :/
+				rel = RoundHalfUp // OMG LEE KILLOUGH LIVES! :/
 					(
 						sector->Level->WallHorizLight
 						+ fabs(atan(delta.Y / delta.X) / 1.57079)
@@ -1572,7 +1613,7 @@ int side_t::GetLightLevel (bool foggy, int baselight, int which, bool is3dlight,
 			}
 			else
 			{
-				rel = delta.X == 0 ? sector->Level->WallVertLight : 
+				rel = delta.X == 0 ? sector->Level->WallVertLight :
 					  delta.Y == 0 ? sector->Level->WallHorizLight : 0;
 			}
 			if (pfakecontrast != NULL)
@@ -1628,4 +1669,3 @@ void vertex_t::RecalcVertexHeights()
 	if (numheights <= 2) numheights = 0;	// is not in need of any special attention
 	dirty = false;
 }
-

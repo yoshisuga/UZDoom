@@ -146,7 +146,7 @@ static cycle_t GCTime;			// Track time spent in GC
 //==========================================================================
 //
 // CheckGC
-// 
+//
 // Check if it's time to collect, and do a collection step if it is.
 // Also does some bookkeeping. Should be called fairly consistantly.
 //
@@ -154,17 +154,6 @@ static cycle_t GCTime;			// Track time spent in GC
 
 void CheckGC()
 {
-	if (bPredictionGuard)
-	{
-		// HACK: GC running during prediction is terrifying,
-		// because it runs off of copious amounts of memcpy.
-
-		// This (and the related hack in P_UnPredictPlayer)
-		// will not be needed whenever the prediction
-		// is updated to use serialization instead.
-		return;
-	}
-
 	AllocHistory.AddAlloc(RunningAllocBytes);
 	RunningAllocBytes = 0;
 	if (State > GCS_Pause || AllocBytes >= Threshold)
@@ -408,7 +397,7 @@ static void Atomic()
 //==========================================================================
 //
 // SweepDone
-// 
+//
 // Sets up the Destroy phase, if there are any dead objects that haven't
 // been destroyed yet, or skips to the Done state.
 //
@@ -867,4 +856,3 @@ CCMD(gc)
 		}
 	}
 }
-

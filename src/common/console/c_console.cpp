@@ -56,6 +56,11 @@
 #import "TargetConditionals.h"
 #endif
 
+#include "zstring.h"
+#include <array>
+#include <string_view>
+#include <vector>
+
 namespace Console::Defaults
 {
 	static inline constexpr uint8_t left_margin = 8;
@@ -67,7 +72,7 @@ namespace Console::Defaults
 	static inline constexpr uint8_t scroll_up = 1;
 	static inline constexpr uint8_t scroll_down = 2;
 	static inline constexpr uint8_t scroll_no = 0;
-	
+
 	static inline constexpr uint8_t min_con_lines_for_cursor = 20;
 	static inline constexpr uint8_t min_con_lines_for_text = 12;
 	static inline constexpr uint64_t ms_between_cursor_ticks = 500;
@@ -98,7 +103,7 @@ static FTextureID conflat;
 static uint32_t conshade;
 static bool conline;
 
-extern FConsoleCommand *Commands[FConsoleCommand::HASH_SIZE];
+extern std::array<FConsoleCommand*, FConsoleCommand::hash_size> Commands;
 
 int			ConWidth;
 bool		vidactive = false;
@@ -321,10 +326,8 @@ void C_DeinitConsole ()
 
 	// Free alias commands. (i.e. The "commands" that can be allocated
 	// at runtime.)
-	for (size_t i = 0; i < countof(Commands); ++i)
+	for (auto* command : Commands)
 	{
-		FConsoleCommand *command = Commands[i];
-
 		while (command != NULL)
 		{
 			FConsoleCommand *nextcmd = command->m_Next;
@@ -373,7 +376,7 @@ static void setmsgcolor (int index, int color)
 }
 
 
-void AddToConsole (int printlevel, const char *text)
+void AddToConsole (PrintFlag printlevel, const char *text)
 {
 	conbuffer->AddText(printlevel, MakeUTF8(text));
 }
@@ -416,59 +419,88 @@ void WriteLineToLog(FILE *LogFile, const char *outline)
 	fflush(LogFile);
 }
 
-extern bool gameisdead;
+namespace detail
+{
+inline int PrintString(PrintFlag iprintlevel, const char *outline)
+{
+	PrintFlag printlevel = static_cast<PrintFlag>(iprintlevel & PRINT_TYPES);
+	bool toScreen = printlevel != PRINT_LOG;
+	bool toFile = Logfile != nullptr && !(iprintlevel & PRINT_NOLOG);
+	bool toDebugger = !(iprintlevel & PRINT_NODAPEVENT);
+	int count = 0;
 
-int PrintString (int iprintlevel, const char *outline)
+	if (toScreen || toFile || toDebugger)
+	{
+		// Convert everything coming through here to UTF-8 so that all console text is in a consistent format
+		outline = MakeUTF8(outline, &count);
+	}
+	if (count == 0) return 0;
+
+	if (toScreen)
+	{
+		I_PrintStr(outline);
+		if (!(iprintlevel & PRINT_NOCONSOLE))
+			conbuffer->AddText(printlevel, outline);
+		if (vidactive && screen && !(iprintlevel & PRINT_NONOTIFY) && NotifyStrings)
+		{
+			if (printlevel >= msglevel)
+			{
+				NotifyStrings->AddString(iprintlevel, outline);
+			}
+		}
+	}
+	if (toFile)
+	{
+		WriteLineToLog(Logfile, outline);
+	}
+	if (toDebugger)
+	{
+		DebugServer::RuntimeEvents::EmitLogEvent(iprintlevel, outline);
+	}
+
+	return count;
+}
+}
+
+
+extern bool gameisdead;
+struct BufferedWrite { PrintFlag l; std::string s; };
+std::unique_ptr<std::vector<BufferedWrite>> prebuffer;
+
+int PrintString (PrintFlag iprintlevel, const char *outline)
 {
 	if (gameisdead)
 		return 0;
 
-	if (!conbuffer) return 0;	// when called too early
-	int printlevel = iprintlevel & PRINT_TYPES;
-	if (*outline == '\0')
+	if (!conbuffer)
 	{
+		if (!prebuffer) prebuffer = std::make_unique<std::vector<BufferedWrite>>();
+		if (prebuffer) prebuffer->push_back({iprintlevel, outline});
 		return 0;
 	}
-	if (printlevel != PRINT_LOG || !(iprintlevel & PRINT_NODAPEVENT) || Logfile != nullptr)
-	{
-		// Convert everything coming through here to UTF-8 so that all console text is in a consistent format
-		int count;
-		outline = MakeUTF8(outline, &count);
 
-		if (printlevel != PRINT_LOG)
+	auto ret = ::detail::PrintString(iprintlevel, outline);
+
+	if (prebuffer) // we want the version string to be the first thing printed
+	{
+		for (auto &line: *prebuffer)
 		{
-			I_PrintStr(outline);
-			if (!(iprintlevel & PRINT_NOCONSOLE))
-				conbuffer->AddText(printlevel, outline);
-			if (vidactive && screen && !(iprintlevel & PRINT_NONOTIFY) && NotifyStrings)
-			{
-				if (printlevel >= msglevel)
-				{
-					NotifyStrings->AddString(iprintlevel, outline);
-				}
-			}
+			::detail::PrintString(line.l, line.s.c_str());
 		}
-		if (Logfile != nullptr && !(iprintlevel & PRINT_NOLOG))
-		{
-			WriteLineToLog(Logfile, outline);
-		}
-		if (!(iprintlevel & PRINT_NODAPEVENT))
-		{
-			DebugServer::RuntimeEvents::EmitLogEvent(iprintlevel, outline);
-		}
-		return count;
+		prebuffer.reset();
 	}
-	return 0;	// Don't waste time on calculating this if nothing at all was printed...
+
+	return ret;
 }
 
-int VPrintf (int printlevel, const char *format, va_list parms)
+int VPrintf (PrintFlag printlevel, const char *format, va_list parms)
 {
 	FString outline;
 	outline.VFormat (format, parms);
 	return PrintString (printlevel, outline.GetChars());
 }
 
-int Printf (int printlevel, const char *format, ...)
+int Printf (PrintFlag printlevel, const char *format, ...)
 {
 	va_list argptr;
 	int count;
@@ -492,22 +524,58 @@ int Printf (const char *format, ...)
 	return count;
 }
 
-int DPrintf (int level, const char *format, ...)
+namespace detail
+{
+inline int DPrintf(DPrintLevel level, PrintFlag printlevel, const char *format, va_list argptr)
+{
+	return (!developer.get() || developer >= level)? VPrintf(printlevel, format, argptr): 0;
+}
+}
+
+int DPrintf (DPrintLevel level, PrintFlag printlevel, const char *format, ...)
 {
 	va_list argptr;
-	int count;
+	va_start(argptr, format);
+	int count = ::detail::DPrintf(level, printlevel, format, argptr);
+	va_end(argptr);
+	return count;
+}
 
-	if (developer >= level)
+int DPrintf(DPrintLevel level, const char *format, ...)
+{
+	va_list argptr;
+	va_start(argptr, format);
+	int count = ::detail::DPrintf(level, PRINT_HIGH, format, argptr);
+	va_end(argptr);
+	return count;
+}
+
+namespace detail
+{
+void DebugLog(std::string_view file, size_t line, const char * format, ...)
+{
+	static const size_t start = [&file]() {
+		std::string here = __FILE__;
+		std::string target = "common/console/c_console.cpp";
+#ifdef _WIN32
+		for (char &c: target) if (c == '/') c = '\\';
+#endif
+		size_t size = here.size() - target.size();
+		std::string prefix = here.substr(0, size);
+		if (!here.ends_with(target) || !file.starts_with(prefix)) size = 0; // target need to be updated
+		return size;
+	}();
+	if (start < file.size())
 	{
-		va_start (argptr, format);
-		count = VPrintf (PRINT_HIGH, format, argptr);
-		va_end (argptr);
-		return count;
+		file.remove_prefix(start);
 	}
-	else
-	{
-		return 0;
-	}
+	va_list argptr;
+	va_start(argptr, format);
+	FString data;
+	data.VFormat(format, argptr);
+	va_end(argptr);
+	DPrintf(DMSG_SPAMMY, PRINT_HIGH, "%s:%lu : %s\n", file.data(), line, data.GetChars());
+}
 }
 
 void C_FlushDisplay ()
@@ -795,7 +863,7 @@ static bool C_HandleKey (event_t *ev, FCommandBuffer &buffer)
 			}
 		}
 		// Add keypress to command line
-		buffer.AddChar(data1);
+		buffer.AddChar((uint16_t)data1);
 		HistPos = NULL;
 		TabbedLast = false;
 		TabbedList = false;
@@ -971,7 +1039,7 @@ static bool C_HandleKey (event_t *ev, FCommandBuffer &buffer)
 			FString bufferText = buffer.GetText();
 
 			bufferText.StripLeftRight();
-			Printf(127, TEXTCOLOR_WHITE "]%s\n", bufferText.GetChars());
+			Printf(static_cast<PrintFlag>(127), TEXTCOLOR_WHITE "]%s\n", bufferText.GetChars()); // FIXME: wtf is 127 here?
 
 			if (bufferText.Len() == 0)
 			{

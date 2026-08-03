@@ -28,9 +28,11 @@
 #include <assert.h>
 #include <string.h>
 #include "files_internal.h"
+#include "m_crc32.h"
+#include "engineerrors.h"
 
 namespace FileSys {
-	
+
 #ifdef _WIN32
 std::wstring toWide(const char* str);
 #endif

@@ -175,7 +175,7 @@ static int FindWadClusterInfo (int cluster)
 	for (unsigned int i = 0; i < wadclusterinfos.Size(); i++)
 		if (wadclusterinfos[i].cluster == cluster)
 			return i;
-		
+
 	return -1;
 }
 
@@ -475,7 +475,7 @@ void FMapInfoParser::ParseOpenBrace()
 	{
 	default:
 		format_type = sc.CheckString("{") ? FMT_New : FMT_Old;
-		if (format_type == FMT_New) 
+		if (format_type == FMT_New)
 			sc.SetCMode(true);
 		break;
 
@@ -558,7 +558,7 @@ void FMapInfoParser::ParseComma()
 
 bool FMapInfoParser::CheckNumber()
 {
-	if (format_type == FMT_New) 
+	if (format_type == FMT_New)
 	{
 		if (sc.CheckString(","))
 		{
@@ -577,7 +577,7 @@ bool FMapInfoParser::CheckNumber()
 
 bool FMapInfoParser::CheckFloat()
 {
-	if (format_type == FMT_New) 
+	if (format_type == FMT_New)
 	{
 		if (sc.CheckString(","))
 		{
@@ -1770,7 +1770,7 @@ DEFINE_MAP_OPTION(outro, true)
 
 //==========================================================================
 //
-// All flag based map options 
+// All flag based map options
 //
 //==========================================================================
 
@@ -1880,7 +1880,7 @@ MapFlagHandlers[] =
 	{ "unfreezesingleplayerconversations",MITYPE_SETFLAG2,	LEVEL2_CONV_SINGLE_UNFREEZE, 0 },
 	{ "spawnwithweaponraised",			MITYPE_SETFLAG2,	LEVEL2_PRERAISEWEAPON, 0 },
 	{ "needclustertext",				MITYPE_SETFLAG2,	LEVEL2_NEEDCLUSTERTEXT, 0 },
-	{ "noclustertext",					MITYPE_SETFLAG2,	LEVEL2_NOCLUSTERTEXT, 0 },	// Normally there shouldn't be a need to explicitly set this 
+	{ "noclustertext",					MITYPE_SETFLAG2,	LEVEL2_NOCLUSTERTEXT, 0 },	// Normally there shouldn't be a need to explicitly set this
 	{ "forcefakecontrast",				MITYPE_SETFLAG3,	LEVEL3_FORCEFAKECONTRAST, 0 },
 	{ "nolightfade",					MITYPE_SETFLAG3,	LEVEL3_NOLIGHTFADE, 0 },
 	{ "nocoloredspritelighting",		MITYPE_SETFLAG3,	LEVEL3_NOCOLOREDSPRITELIGHTING, 0 },
@@ -1894,6 +1894,7 @@ MapFlagHandlers[] =
 	{ "attenuatelights",				MITYPE_SETFLAG3,	LEVEL3_ATTENUATE, 0 },
 	{ "nofogofwar",						MITYPE_SETFLAG3,	LEVEL3_NOFOGOFWAR, 0 },
 	{ "useskymist",						MITYPE_SETFLAG3,	LEVEL3_SKYMIST, 0 },
+	{ "noambientocclusion",				MITYPE_SETFLAG3,	LEVEL3_NOAMBIENTOCCLUSION, 0 },
 	{ "nobotnodes",						MITYPE_IGNORE,	0, 0 },		// Skulltag option: nobotnodes
 	{ "nopassover",						MITYPE_COMPATFLAG, COMPATF_NO_PASSMOBJ, 0 },
 	{ "passover",						MITYPE_CLRCOMPATFLAG, COMPATF_NO_PASSMOBJ, 0 },
@@ -1940,10 +1941,11 @@ MapFlagHandlers[] =
 	{ "compat_scriptwait",				MITYPE_COMPATFLAG, 0, COMPATF2_SCRIPTWAIT },
 	{ "compat_avoidhazards",			MITYPE_COMPATFLAG, 0, COMPATF2_AVOID_HAZARDS },
 	{ "compat_stayonlift",				MITYPE_COMPATFLAG, 0, COMPATF2_STAYONLIFT },
-	{ "compat_nombf21",					MITYPE_COMPATFLAG, 0, COMPATF2_NOMBF21 },
+	{ "compat_reservedlineflag",	MITYPE_COMPATFLAG, 0, COMPATF2_RESERVEDLINEFLAG },
 	{ "compat_voodoozombies",			MITYPE_COMPATFLAG, 0, COMPATF2_VOODOO_ZOMBIES },
 	{ "compat_noacsargcheck",			MITYPE_COMPATFLAG, 0, COMPATF2_NOACSARGCHECK },
 	{ "compat_novdolllockmsg",			MITYPE_COMPATFLAG, 0, COMPATF2_NOVDOLLLOCKMSG },
+	{ "compat_emulatemikoportals",		MITYPE_COMPATFLAG, 0, COMPATF2_EMULATEMIKOPORTALS },
 
 	{ "cd_start_track",					MITYPE_EATNEXT,	0, 0 },
 	{ "cd_end1_track",					MITYPE_EATNEXT,	0, 0 },
@@ -2111,10 +2113,10 @@ void FMapInfoParser::ParseMapDefinition(level_info_t &info)
 					success = true;
 					return false;  // break
 				}
-				
+
 				return true;  // continue
 			});
-			
+
 			if (!success)
 			{
 				if (!ParseCloseBrace())
@@ -2194,7 +2196,7 @@ level_info_t *FMapInfoParser::ParseMapHeader(level_info_t &defaultinfo)
 			format_type = FMT_Old;
 		}
 	}
-	else 
+	else
 	{
 		sc.MustGetString();
 		mapname = sc.String;
@@ -2539,7 +2541,7 @@ void FMapInfoParser::ParseMapInfo (int lump, level_info_t &gamedefaults, level_i
 			}
 			SetLevelNum (levelinfo, levelinfo->levelnum);	// Wipe out matching levelnums from other maps.
 		}
-		// clusterdef is the old keyword but the new format has enough 
+		// clusterdef is the old keyword but the new format has enough
 		// structuring that 'cluster' can be handled, too. The old format does not.
 		else if (sc.Compare("clusterdef") || (format_type != FMT_Old && sc.Compare("cluster")))
 		{
@@ -2707,7 +2709,7 @@ void G_ParseMapInfo(FString basemapinfo)
 					COMPATF_LIMITPAIN | COMPATF_INVISIBILITY | COMPATF_VILEGHOSTS;
 
 				flags2 =
-					COMPATF2_FLOORMOVE | COMPATF2_EXPLODE1 | COMPATF2_NOMBF21 | COMPATF2_POINTONLINE;
+					COMPATF2_FLOORMOVE | COMPATF2_EXPLODE1 | COMPATF2_POINTONLINE | COMPATF2_EMULATEMIKOPORTALS;
 			}
 			else if (length == 4 && !strnicmp("boom", data, 4))
 			{
@@ -2716,7 +2718,7 @@ void G_ParseMapInfo(FString basemapinfo)
 					COMPATF_INVISIBILITY;
 
 				flags2 =
-					COMPATF2_EXPLODE1 | COMPATF2_NOMBF21 | COMPATF2_POINTONLINE;
+					COMPATF2_EXPLODE1 | COMPATF2_POINTONLINE | COMPATF2_EMULATEMIKOPORTALS | COMPATF2_TRANSFERSECRET;
 			}
 			else if (length == 3 && !strnicmp("mbf", data, 3))
 			{
@@ -2724,8 +2726,8 @@ void G_ParseMapInfo(FString basemapinfo)
 					COMPATF_TRACE | COMPATF_SOUNDTARGET | COMPATF_BOOMSCROLL | COMPATF_MISSILECLIP | COMPATF_MUSHROOM |
 					COMPATF_MBFMONSTERMOVE | COMPATF_NOBLOCKFRIENDS | COMPATF_MASKEDMIDTEX | COMPATF_INVISIBILITY;
 
-				flags2 =
-					COMPATF2_EXPLODE1 | COMPATF2_AVOID_HAZARDS | COMPATF2_STAYONLIFT | COMPATF2_NOMBF21 | COMPATF2_POINTONLINE;
+				flags2 = COMPATF2_EXPLODE1 | COMPATF2_AVOID_HAZARDS | COMPATF2_STAYONLIFT | COMPATF2_POINTONLINE |
+				         COMPATF2_TRANSFERSECRET;
 			}
 			else if (length == 5 && !strnicmp("mbf21", data, 5))
 			{
@@ -2733,8 +2735,8 @@ void G_ParseMapInfo(FString basemapinfo)
 					COMPATF_TRACE | COMPATF_SOUNDTARGET | COMPATF_BOOMSCROLL | COMPATF_MISSILECLIP | COMPATF_MUSHROOM |
 					COMPATF_MASKEDMIDTEX | COMPATF_INVISIBILITY;
 
-				flags2 =
-					COMPATF2_EXPLODE1 | COMPATF2_AVOID_HAZARDS | COMPATF2_STAYONLIFT | COMPATF2_POINTONLINE;
+				flags2 = COMPATF2_EXPLODE1 | COMPATF2_AVOID_HAZARDS | COMPATF2_STAYONLIFT | COMPATF2_POINTONLINE |
+				         COMPATF2_TRANSFERSECRET;
 			}
 		}
 	}
@@ -2827,7 +2829,7 @@ void G_ParseMapInfo(FString basemapinfo)
 void G_AddBoomHelpScreens()
 {
 	// Now add Boom's dynamic help screens to the infopages array if it got marked accordingly.
-	// Doing this manually via config files would be a bit inconvenient for 100 file names, 
+	// Doing this manually via config files would be a bit inconvenient for 100 file names,
 	// so use a "*" entry in the list of help screens to insert these.
 	for (unsigned i = 0; i < gameinfo.infoPages.Size(); i++)
 	{
@@ -2848,7 +2850,7 @@ void G_AddBoomHelpScreens()
 			break;
 		}
 	}
-	
+
 
 }
 

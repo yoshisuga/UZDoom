@@ -48,6 +48,8 @@
 #include "p_visualthinker.h"
 #include <memory>
 
+EXTERN_CVAR(Bool, sv_autocompat)
+
 struct FGlobalDLightLists
 {
 	//TODO add TSet and switch from TMap to TSet
@@ -141,7 +143,7 @@ struct FLevelLocals
 	int GetConversation(FName classname);
 	void SetConversation(int convid, PClassActor *Class, int dlgindex);
 	int FindNode (const FStrifeDialogueNode *node);
-    int GetInfighting();
+	int GetInfighting();
 	void SetCompatLineOnSide(bool state);
 	ELevelCompatFlags GetCompatibility(ELevelCompatFlags mask);
 	ELevelCompatFlags2 GetCompatibility2(ELevelCompatFlags2 mask);
@@ -381,7 +383,7 @@ public:
 		auto it = GetSectorTagIterator(tag);
 		return it.Next();
 	}
-	
+
 	int FindFirstLineFromID(int tag)
 	{
 		auto it = GetLineIdIterator(tag);
@@ -423,7 +425,7 @@ public:
 	{
 		return PointInRenderSubsector(FloatToFixed(pos.X), FloatToFixed(pos.Y));
 	}
-	
+
 	FPolyObj *GetPolyobj (int polyNum)
 	{
 		auto index = Polyobjects.FindEx([=](const auto &poly) { return poly.tag == polyNum; });
@@ -450,8 +452,6 @@ public:
 
 	DThinker *CreateThinker(PClass *cls, int statnum = STAT_DEFAULT)
 	{
-		if (bPredictionGuard)
-			DPrintf(DMSG_WARNING, TEXTCOLOR_RED "Spawned non-client-side Thinker %s while predicting\n", cls->TypeName.GetChars());
 		DThinker *thinker = static_cast<DThinker*>(cls->CreateNew());
 		assert(thinker->IsKindOf(RUNTIME_CLASS(DThinker)));
 		thinker->ObjectFlags |= OF_JustSpawned;
@@ -472,7 +472,7 @@ public:
 	{
 		DThinker* thinker = static_cast<DThinker*>(cls->CreateNew());
 		assert(thinker->IsKindOf(RUNTIME_CLASS(DThinker)));
-		thinker->ObjectFlags |= OF_JustSpawned | OF_ClientSide | OF_Transient;
+		thinker->ObjectFlags |= OF_JustSpawned | OF_ClientSide | OF_Transient | OF_NoRollback;
 		ClientSideThinkers.Link(thinker, statnum);
 		thinker->Level = this;
 		return thinker;
@@ -485,7 +485,7 @@ public:
 		thinker->Construct(std::forward<Args>(args)...);
 		return thinker;
 	}
-	
+
 	void SetMusic();
 
 	TArray<vertex_t> vertexes;
@@ -601,19 +601,19 @@ public:
 	TObjPtr<AActor*> bodyque[BODYQUESIZE];
 	TObjPtr<DAutomapBase*> automap = MakeObjPtr<DAutomapBase*>(nullptr);
 	int bodyqueslot;
-	
+
 	// For now this merely points to the global player array, but with this in place, access to this array can be moved over to the level.
 	// As things progress each level needs to be able to point to different players, even if they are just null if the second level is merely a skybox or camera target.
 	// But even if it got a real player, the level will not own it - the player merely links to the level.
 	// This should also be made a real object eventually.
 	player_t *Players[MAXPLAYERS];
-	
+
 	// This is to allow refactoring without refactoring the data right away.
 	bool PlayerInGame(int pnum)
 	{
 		return playeringame[pnum];
 	}
-	
+
 	// This needs to be done better, but for now it should be good enough.
 	bool PlayerInGame(player_t *player)
 	{
@@ -632,18 +632,18 @@ public:
 		}
 		return -1;
 	}
-	
+
 	bool isPrimaryLevel() const
 	{
 		return true;
 	}
-	
+
 	// Gets the console player without having the calling code be aware of the level's state.
 	player_t *GetConsolePlayer() const
 	{
 		return isPrimaryLevel()? Players[consoleplayer] : nullptr;
 	}
-	
+
 	bool isConsolePlayer(AActor *mo) const
 	{
 		auto p = GetConsolePlayer();
@@ -656,12 +656,6 @@ public:
 		auto p = GetConsolePlayer();
 		if (!p) return false;
 		return p->camera == mo;
-	}
-
-	bool MBF21Enabled() const
-	{
-		// The affected features only are a problem with Doom format maps - the flag should have no effect in Hexen and UDMF format.
-		return !(i_compatflags2 & COMPATF2_NOMBF21) || maptype != MAPTYPE_DOOM;
 	}
 
 	int NumMapSections;
@@ -865,6 +859,12 @@ public:
 		if (dmflags & DF_YES_FREELOOK)
 			return true;
 		return !(flags & LEVEL_FREELOOK_NO);
+	}
+
+	bool MissileShouldClip() const
+	{
+		return (i_compatflags & COMPATF_MISSILECLIP) ||
+			(sv_autocompat && (gameinfo.gametype & GAME_DoomChex) && maptype == MAPTYPE_DOOM);
 	}
 
 	node_t		*HeadNode() const

@@ -17,33 +17,29 @@
 **
 **---------------------------------------------------------------------------
 **
+** Finally, for odd reasons, the player input is buffered within
+** the player data struct, as commands per game tick.
+**
+** The player data structure depends on a number of other structs:
+** items (internal inventory), animation states (closely tied to
+** the sprites used to represent them, unfortunately).
+**
+** In addition, the player is just a special case of the generic
+** moving object/actor.
 */
 
 #ifndef __D_PLAYER_H__
 #define __D_PLAYER_H__
 
-// Finally, for odd reasons, the player input
-// is buffered within the player data struct,
-// as commands per game tick.
-#include "d_protocol.h"
-#include "doomstat.h"
-
 #include "a_weapons.h"
-
-#include "d_netinf.h"
-
-// The player data structure depends on a number
-// of other structs: items (internal inventory),
-// animation states (closely tied to the sprites
-// used to represent them, unfortunately).
-#include "p_pspr.h"
-
-// In addition, the player is just a special
-// case of the generic moving object/actor.
 #include "actor.h"
-
-//Added by MC:
 #include "b_bot.h"
+#include "basics.h"
+#include "d_netinf.h"
+#include "d_protocol.h"
+#include "doomdef.h"
+#include "doomstat.h"
+#include "p_pspr.h"
 
 class player_t;
 
@@ -72,6 +68,8 @@ typedef TArray<std::tuple<PClass*, int, FPlayerColorSet>> ColorSetList;
 
 extern PainFlashList PainFlashes;
 extern ColorSetList ColorSets;
+
+EXTERN_CVAR(Bool, gl_enhanced_nightvision)
 
 FString GetPrintableDisplayName(PClassActor *cls);
 
@@ -145,6 +143,15 @@ enum
 	WF_USER4OK			= 1 << 11,
 };
 
+enum EFullbrightMode
+{
+	FBMODE_NONE,
+	FBMODE_DEFAULT,		// Use player preference for fullbright vs night vision.
+	FBMODE_FULLBRIGHT,
+	FBMODE_NIGHTVISION,
+	FBMODE_TORCH,
+};
+
 // The VM cannot deal with this as an invalid pointer because it performs a read barrier on every object pointer read.
 // This doesn't have to point to a valid weapon, though, because WP_NOCHANGE is never dereferenced, but it must point to a valid object
 // and the class descriptor just works fine for that.
@@ -186,9 +193,10 @@ struct userinfo_t : TMap<FName,FBaseCVar *>
 		}
 
 		float aim = *static_cast<FFloatCVar *>(*CheckKey(NAME_Autoaim));
-		if (aim > 35 || aim < 0)
+		float bound = (dmflags & DF_NO_FREELOOK)? 35: 70;
+		if (aim > bound || aim < 0)
 		{
-			return 35.;
+			return bound;
 		}
 		else
 		{
@@ -296,6 +304,18 @@ struct userinfo_t : TMap<FName,FBaseCVar *>
 void ReadUserInfo(FSerializer &arc, userinfo_t &info, FString &skin);
 void WriteUserInfo(FSerializer &arc, userinfo_t &info);
 
+struct FSafePosition
+{
+	sector_t* Sector = nullptr;
+	DVector3 Pos = {};
+	double Height = 0.0, MaxStepHeight = 0.0;
+	bool bValidPos = false;
+
+	void Update(AActor& mobj, bool force = false);
+	bool IsSafe(int tid) const;
+	FSerializer& Serialize(FSerializer& arc, const char* name);
+};
+
 //
 // Extended player object info: player_t
 //
@@ -305,7 +325,7 @@ public:
 	player_t() { angleOffsetTargets.Zero(); }
 	~player_t();
 	player_t &operator= (const player_t &p) = delete;
-	void CopyFrom(player_t &src, bool copyPSP);
+	void CopyFrom(player_t &src);
 
 	void Serialize(FSerializer &arc);
 	size_t PropagateMark();
@@ -322,7 +342,7 @@ public:
 	uint32_t		original_oldbuttons = 0;
 
 	userinfo_t	userinfo;				// [RH] who is this?
-	
+
 	PClassActor *cls = nullptr;				// class of associated PlayerPawn
 
 	float		DesiredFOV = 0;				// desired field of vision
@@ -381,6 +401,8 @@ public:
 	int			extralight = 0;				// so gun flashes light up areas
 	short		fixedcolormap = 0;			// can be set to REDCOLORMAP, etc.
 	short		fixedlightlevel = 0;
+	EFullbrightMode FullbrightMode = FBMODE_NONE;	// Allow manually specifying the fullbright mode.
+	bool		bForceFullbright = false;
 	int			morphTics = 0;				// player is a chicken/pig if > 0
 	PClassActor *MorphedPlayerClass = nullptr;		// [MH] (for SBARINFO) class # for this player instance when morphed
 	int			MorphStyle = 0;				// which effects to apply for this player instance when morphed
@@ -432,7 +454,7 @@ public:
 	DAngle ConversationNPCAngle = nullAngle;
 	bool ConversationFaceTalker = false;
 
-	DVector3 LastSafePos = {}; // Mark the last known safe location the player was standing.
+	FSafePosition LastSafePos = {}; // Mark the last known safe location the player was standing.
 
 	double GetDeltaViewHeight() const
 	{
@@ -456,7 +478,21 @@ public:
 			viewheight = mo ? mo->FloatVar(NAME_ViewHeight) : 0;
 		}
 	}
-	
+
+	EFullbrightMode GetFullbrightMode() const
+	{
+		EFullbrightMode mode = FullbrightMode;
+		if (mode == FBMODE_DEFAULT)
+			mode = gl_enhanced_nightvision ? FBMODE_NIGHTVISION : FBMODE_FULLBRIGHT;
+		return mode;
+	}
+
+	void SetFullbrightMode(EFullbrightMode mode, bool force)
+	{
+		FullbrightMode = mode;
+		bForceFullbright = force;
+	}
+
 	int GetSpawnClass();
 
 	// PSprite layers

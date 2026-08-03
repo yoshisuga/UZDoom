@@ -21,24 +21,24 @@
 **
 */
 
-
-#include "doomdef.h"
-#include "sbar.h"
-#include "c_cvars.h"
-#include "v_video.h"
-#include "cmdlib.h"
-#include "serializer_doom.h"
-#include "serialize_obj.h"
-#include "doomstat.h"
-#include "vm.h"
 #include "c_console.h"
+#include "c_cvars.h"
+#include "cmdlib.h"
+#include "doomdef.h"
+#include "doomstat.h"
+#include "printf.h"
+#include "sbar.h"
 #include "v_draw.h"
+#include "v_video.h"
+#include "vm.h"
+
+#include "serialize_obj.h" // IWYU pragma: keep
+#include "serializer_doom.h" // IWYU pragma: keep
 
 IMPLEMENT_CLASS(DHUDMessageBase, false, true)
 IMPLEMENT_POINTERS_START(DHUDMessageBase)
 IMPLEMENT_POINTER(Next)
 IMPLEMENT_POINTERS_END
-
 
 IMPLEMENT_CLASS(DHUDMessage, false, false)
 
@@ -160,7 +160,7 @@ DHUDMessage::DHUDMessage (FFont *font, const char *text, float x, float y, int h
 		Top = y;
 		HUDWidth = hudwidth;
 		HUDHeight = hudheight;
-		
+
 		float intpart;
 		int fracpart = (int)(fabsf (modff (x, &intpart)) * 10.f + 0.5f);
 		if (fracpart & 4)
@@ -501,7 +501,7 @@ void DHUDMessage::DoDraw (int linenum, int x, int y, bool clean, int hudheight)
 //============================================================================
 
 DHUDMessageFadeOut::DHUDMessageFadeOut (FFont *font, const char *text, float x, float y,
-	int hudwidth, int hudheight,									
+	int hudwidth, int hudheight,
 	EColorRange textColor, float holdTime, float fadeOutTime)
 	: DHUDMessage (font, text, x, y, hudwidth, hudheight, textColor, holdTime)
 {
@@ -595,7 +595,7 @@ void DHUDMessageFadeOut::DoDraw (int linenum, int x, int y, bool clean, int hudh
 //============================================================================
 
 DHUDMessageFadeInOut::DHUDMessageFadeInOut (FFont *font, const char *text, float x, float y,
-	int hudwidth, int hudheight,									
+	int hudwidth, int hudheight,
 	EColorRange textColor, float holdTime, float fadeInTime, float fadeOutTime)
 	: DHUDMessageFadeOut (font, text, x, y, hudwidth, hudheight, textColor, holdTime, fadeOutTime)
 {
@@ -767,7 +767,7 @@ bool DHUDMessageTypeOnFadeOut::Tick ()
 				if (State == 3 && --step >= 0)
 				{
 					linedrawcount++;
-					
+
 					if (text.GetNextCharacter(linevis) == TEXTCOLOR_ESCAPE)
 					{
 						if (text[linevis] == '[')
@@ -889,7 +889,7 @@ void C_MidPrint(FFont* font, const char* msg, bool bold)
 	if (msg != nullptr)
 	{
 		auto color = (EColorRange)PrintColors[bold ? PRINTLEVELS + 1 : PRINTLEVELS];
-		Printf(PRINT_HIGH | PRINT_NONOTIFY, TEXTCOLOR_ESCAPESTR "%c%s\n%s\n%s\n", color, console_bar, msg, console_bar);
+		Printf(PRINT_NONOTIFY, TEXTCOLOR_ESCAPESTR "%c%s\n%s\n%s\n", color, console_bar, msg, console_bar);
 
 		StatusBar->AttachMessage(Create<DHUDMessage>(font, msg, 1.5f, 0.375f, 0, 0, color, con_midtime), MAKE_ID('C', 'N', 'T', 'R'));
 	}
@@ -898,4 +898,3 @@ void C_MidPrint(FFont* font, const char* msg, bool bold)
 		StatusBar->DetachMessage(MAKE_ID('C', 'N', 'T', 'R'));
 	}
 }
-

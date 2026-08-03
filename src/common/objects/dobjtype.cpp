@@ -24,16 +24,14 @@
 
 // HEADER FILES ------------------------------------------------------------
 
-#include <limits>
-
-#include "dobject.h"
-#include "serializer.h"
 #include "autosegs.h"
-#include "v_text.h"
 #include "c_cvars.h"
-#include "vm.h"
+#include "dobject.h"
+#include "printf.h"
+#include "serializer.h"
 #include "symbols.h"
 #include "types.h"
+#include "vm.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -71,6 +69,24 @@ DEFINE_GLOBAL(WP_NOCHANGE);
 // A harmless non-nullptr FlatPointer for classes without pointers.
 static const std::pair<size_t,PType *> TheEnd = {~(size_t)0 , nullptr};
 
+void SetObjectFlagsFromScope(DObject* obj)
+{
+	const PClass* cls = obj->GetClass();
+	if (cls->VMType != nullptr)
+	{
+		const int side = FScopeBarrier::SideFromObjectFlags(cls->VMType->ScopeFlags);
+		if (side == FScopeBarrier::Side_PlainData)
+			obj->ObjectFlags |= OF_ClientSide;
+		else if (side == FScopeBarrier::Side_UI)
+			obj->ObjectFlags |= OF_ClientSide | OF_NoRollback;
+	}
+	else
+	{
+		// For anything without a scope, just assume it's data scoped.
+		obj->ObjectFlags |= OF_ClientSide;
+	}
+}
+
 //==========================================================================
 //
 // PClass :: WriteValue
@@ -88,7 +104,15 @@ static void RecurseWriteFields(const PClass *type, FSerializer &ar, const void *
 		// Don't write this part if it has no non-transient variables
 		for (unsigned i = 0; i < type->Fields.Size(); ++i)
 		{
-			if (!(type->Fields[i]->Flags & (VARF_Transient|VARF_Meta)))
+			bool canWrite = !(type->Fields[i]->Flags & VARF_Meta);
+			if (canWrite)
+			{
+				if (ar.IsRollback())
+					canWrite = !(type->Fields[i]->Flags & VARF_NoRollback);
+				else
+					canWrite = !(type->Fields[i]->Flags & VARF_Transient);
+			}
+			if (canWrite)
 			{
 				// Tag this section with the class it came from in case
 				// a more-derived class has variables that shadow a less-
@@ -132,6 +156,17 @@ bool PClass::ReadAllFields(FSerializer &ar, void *addr) const
 		Printf(TEXTCOLOR_RED "trying to read user variables but got a non-object (first key is '%s')\n", key);
 		ar.mErrors++;
 		return false;
+	}
+	if (ar.IsRollback())
+	{
+		key = ar.GetKey();
+		if (strcmp(key, "rollbackindex"))
+		{
+			// An Object that wasn't rolled back properly found its way into the list.
+			Printf(TEXTCOLOR_RED "trying to read user variables but got a non-rollback object (second key is '%s')\n", key);
+			ar.mErrors++;
+			return false;
+		}
 	}
 	while ((key = ar.GetKey()))
 	{
@@ -239,7 +274,7 @@ void PClass::StaticShutdown ()
 	// This flags DObject::Destroy not to call any scripted OnDestroy methods anymore.
 	bVMOperational = false;
 
-	// Make a full garbage collection here so that all destroyed but uncollected higher level objects 
+	// Make a full garbage collection here so that all destroyed but uncollected higher level objects
 	// that still exist are properly taken down before the low level data is deleted.
 	GC::FullGC();
 	GC::FullGC();
@@ -429,10 +464,12 @@ DObject *PClass::CreateNew()
 	ConstructNative (mem);
 
 	if (Defaults != nullptr)
-		((DObject *)mem)->ObjectFlags |= ((DObject *)Defaults)->ObjectFlags & (OF_Transient | OF_ClientSide);
+		((DObject *)mem)->ObjectFlags |= ((DObject *)Defaults)->ObjectFlags & OF_TransferrableFlags;
 
 	((DObject *)mem)->SetClass (const_cast<PClass *>(this));
 	InitializeSpecials(mem, Defaults, &PClass::SpecialInits);
+	SetObjectFlagsFromScope((DObject *)mem);
+	NetworkEntityManager::AddPredictedEntity((DObject *)mem);
 	return (DObject *)mem;
 }
 

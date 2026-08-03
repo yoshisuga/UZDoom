@@ -27,6 +27,7 @@
 #include "startupinfo.h"
 #include "image.h"
 #include "texturemanager.h"
+#include "widgets/themedata.h"
 
 // Hexen startup screen
 #define ST_PROGRESS_X			64			// Start of notches x screen pos.
@@ -76,7 +77,7 @@ FGenericStartScreen::FGenericStartScreen(int max_progress)
 				StartupBitmap.Blit(320 * 2 - Background.GetWidth()/2, 220 * 2 - Background.GetHeight() / 2, Background);
 			else
 				StartupBitmap.Blit(0, 0, Background, 640 * 2, 480 * 2);
-		
+
 		}
 	}
 }
@@ -91,13 +92,21 @@ FGenericStartScreen::FGenericStartScreen(int max_progress)
 
 bool FGenericStartScreen::DoProgress(int advance)
 {
-	int notch_pos;
+	static auto argb = 0;
+	static RgbQuad bcolor = { 255, 255, 255, 255 };
+	if (!argb && bcolor.rgbReserved)
+	{
+		argb = Theme::getAccent().toBgra8();
+		bcolor.rgbRed      = static_cast<unsigned char>(0xff&(argb>>16));
+		bcolor.rgbGreen    = static_cast<unsigned char>(0xff&(argb>>8));
+		bcolor.rgbBlue     = static_cast<unsigned char>(0xff&(argb>>0));
+		bcolor.rgbReserved = static_cast<unsigned char>(0xff&(argb>>24));
+	}
 
 	if (CurPos < MaxPos)
 	{
-		RgbQuad bcolor = { 252, 237, 46, 255 }; // [Nash Nov 2025] this is BGRA (todo: make this mod-configurable)
 		int numnotches = 200 * 2;
-		notch_pos = ((CurPos + 1) * numnotches) / MaxPos;
+		int notch_pos = ((CurPos + 1) * numnotches) / MaxPos;
 		if (notch_pos != NotchPos)
 		{ // Time to draw another notch.
 			ClearBlock(StartupBitmap, bcolor, (320 - 100) * 2, 480 * 2 - 30, notch_pos, 4 * 2);

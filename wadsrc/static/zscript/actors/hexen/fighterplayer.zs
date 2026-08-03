@@ -37,7 +37,7 @@ class FighterPlayer : PlayerPawn
 		Player.JumpZ 9;
 		Player.Viewheight 48;
 		Player.SpawnClass "Fighter";
-		Player.DisplayName "Fighter";
+		Player.DisplayName "$MNU_FIGHTER";
 		Player.SoundClass "fighter";
 		Player.ScoreIcon "FITEFACE";
 		Player.HealRadiusType "Armor";
@@ -50,7 +50,7 @@ class FighterPlayer : PlayerPawn
 		Player.WeaponSlot 2, "FWeapAxe";
 		Player.WeaponSlot 3, "FWeapHammer";
 		Player.WeaponSlot 4, "FWeapQuietus";
-		
+
 		Player.ColorRange 246, 254;
 		Player.Colorset		0, "$TXT_COLOR_GOLD",		246, 254,    253;
 		Player.ColorsetFile 1, "$TXT_COLOR_RED",		"TRANTBL0",  0xAC;
@@ -61,7 +61,7 @@ class FighterPlayer : PlayerPawn
 		Player.ColorsetFile 6, "$TXT_COLOR_BROWN",		"TRANTBL5",  0x6F;
 		Player.ColorsetFile 7, "$TXT_COLOR_PURPLE",		"TRANTBL6",  0xEE;
 	}
-	
+
 	States
 	{
 	Spawn:
@@ -85,7 +85,7 @@ class FighterPlayer : PlayerPawn
 		PLAY L 6 A_NoBlocking;
 		PLAY M 6;
 		PLAY N -1;
-		Stop;		
+		Stop;
 	XDeath:
 		PLAY O 5 A_PlayerScream;
 		PLAY P 5 A_SkullPop("BloodyFighterSkull");

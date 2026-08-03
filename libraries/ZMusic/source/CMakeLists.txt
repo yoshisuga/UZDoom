@@ -39,6 +39,8 @@ INTERFACE
 	zmusic/configuration.cpp
 	zmusic/zmusic.cpp
 	zmusic/critsec.cpp
+	zmusic/file_zip.cpp
+	
 	loader/test.c
 )
 
@@ -74,7 +76,15 @@ else()
 	option(DYN_SNDFILE "Dynamically load libsndfile" ON)
 endif()
 
-if(DYN_SNDFILE)
+if(IOS OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
+	# GenZD Custom: iOS cannot dlopen "libsndfile.1.dylib" - no such file exists in an app
+	# bundle - so IsSndFilePresent() returns false and every WAV/FLAC lump is silent.
+	# genzd_target_config.cmake links libsndfile.a statically, so take the non-DYN path:
+	# HAVE_SNDFILE without DYN_SNDFILE makes the decoder call the linked symbols directly.
+	# Do NOT fall through to find_package(SndFile) - it would find a host Homebrew build.
+	target_compile_definitions(zmusic-obj INTERFACE HAVE_SNDFILE)
+	target_include_directories(zmusic-obj INTERFACE "${CMAKE_SOURCE_DIR}/bin/iOS/include/libsndfile")
+elseif(DYN_SNDFILE)
 	target_compile_definitions(zmusic-obj INTERFACE HAVE_SNDFILE DYN_SNDFILE)
 else()
 	find_package(SndFile)
@@ -91,7 +101,13 @@ if ("vcpkg-libsndfile" IN_LIST VCPKG_MANIFEST_FEATURES)
 else()
 	option(DYN_MPG123 "Dynamically load libmpg123" ON)
 endif()
-if(DYN_MPG123)
+if(IOS OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
+	# Same as libsndfile above: "libmpg123.0.dylib" cannot be dlopen'd on iOS, so
+	# IsMPG123Present() returns false and every MP3 lump is silent. libmpg123.a is linked
+	# statically by genzd_target_config.cmake.
+	target_compile_definitions(zmusic-obj INTERFACE HAVE_MPG123)
+	target_include_directories(zmusic-obj INTERFACE "${CMAKE_SOURCE_DIR}/bin/iOS/include/mpg123")
+elseif(DYN_MPG123)
 	target_compile_definitions(zmusic-obj INTERFACE HAVE_MPG123 DYN_MPG123)
 elseif(NOT ("vcpkg-libsndfile" IN_LIST VCPKG_MANIFEST_FEATURES))
 	find_package(MPG123)
@@ -104,6 +120,12 @@ elseif(NOT ("vcpkg-libsndfile" IN_LIST VCPKG_MANIFEST_FEATURES))
 endif()
 
 # FluidSynth - include directories (option and find_package are in thirdparty/CMakeLists.txt)
+# NOTE (GenZD): deliberately left keyed on FLUIDSYNTH_FOUND, which is never set in this
+# scope (see FLUIDSYNTH_TARGET below), so this always uses the bundled headers. That is
+# what we want on iOS: bin/iOS/include/fluidsynth is an incomplete tree with no
+# fluidsynth.h, and bin/include/fluidsynth is 2.3.2, whereas the prebuilt
+# bin/iOS/libfluidsynth.a is 2.5.2. The bundled headers (2.4.8) are the closest match
+# and are ABI-compatible with it.
 if(FLUIDSYNTH_FOUND)
 	target_include_directories(zmusic-obj INTERFACE ${FLUIDSYNTH_INCLUDE_DIR})
 else()
@@ -115,12 +137,25 @@ if(WIN32)
 	target_compile_definitions(zmusic-obj INTERFACE HAVE_SYSTEM_MIDI)
 	target_link_libraries(zmusic-obj INTERFACE winmm)
 	target_sources(zmusic-obj INTERFACE mididevices/music_win_mididevice.cpp)
-elseif(NOT APPLE)
+elseif(IOS OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
+	# GenZD Custom: iOS has no system MIDI and its CoreAudio.framework does not ship
+	# HostTime.h (macOS-only), which music_coremidi_mididevice.mm requires. Leave
+	# HAVE_SYSTEM_MIDI undefined here; iOS uses FluidSynth for MIDI.
+elseif(APPLE)
+	target_compile_definitions(zmusic-obj INTERFACE HAVE_SYSTEM_MIDI)
+	target_sources(zmusic-obj INTERFACE
+		mididevices/music_coremidi_mididevice.mm
+	)
+	target_link_libraries(zmusic-obj INTERFACE
+		"-framework CoreMIDI"
+		"-framework CoreFoundation"
+		"-framework CoreAudio"
+	)
+else()
 	find_package(ALSA)
     if(ALSA_FOUND)
 		target_compile_definitions(zmusic-obj INTERFACE HAVE_SYSTEM_MIDI)
-		target_sources(zmusic-obj
-		INTERFACE
+		target_sources(zmusic-obj INTERFACE
 			mididevices/music_alsa_mididevice.cpp
 			mididevices/music_alsa_state.cpp
 		)
@@ -161,8 +196,13 @@ use_fast_math(zmusiclite)
 target_include_directories(zmusic INTERFACE $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${ZMusic_SOURCE_DIR}/include>)
 target_include_directories(zmusiclite INTERFACE $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${ZMusic_SOURCE_DIR}/include>)
 
-# Use external FluidSynth (libfluidsynth) if found, otherwise internal (fluidsynth)
-if(FLUIDSYNTH_FOUND)
+# Use external FluidSynth (libfluidsynth) if found, otherwise internal (fluidsynth).
+# Test for the target, not FLUIDSYNTH_FOUND: find_package() runs in the sibling
+# thirdparty/ scope and FLUIDSYNTH_FOUND is a normal (non-cache) variable, so it is not
+# visible here. The imported target is created GLOBAL, so it is. Without this, an
+# external FluidSynth yields a link against a nonexistent 'fluidsynth' target, which
+# degrades to -lfluidsynth ("library 'fluidsynth' not found").
+if(TARGET libfluidsynth)
 	set(FLUIDSYNTH_TARGET libfluidsynth)
 else()
 	set(FLUIDSYNTH_TARGET fluidsynth)

@@ -23,13 +23,15 @@
 */
 
 #include "c_console.h"
-#include "vm.h"
-#include "gamestate.h"
 #include "c_cvars.h"
-#include "sbar.h"
-#include "v_video.h"
-#include "i_time.h"
 #include "c_notifybufferbase.h"
+#include "gamestate.h"
+#include "i_time.h"
+#include "printf.h"
+#include "sbar.h"
+#include "gstrings.h"
+#include "v_video.h"
+#include "vm.h"
 
 struct FNotifyBuffer : public FNotifyBufferBase
 {
@@ -41,8 +43,10 @@ public:
 };
 
 static FNotifyBuffer NotifyStrings;
+static FString       lastNotifyString;
 
 EXTERN_CVAR(Bool, show_messages)
+EXTERN_CVAR(Bool, con_stackident)
 extern bool generic_ui;
 CVAR(Float, con_notifytime, 3.f, CVAR_ARCHIVE)
 CVAR(Bool, con_centernotify, false, CVAR_ARCHIVE)
@@ -54,6 +58,7 @@ CUSTOM_CVAR(Int, con_scaletext, 0, CVAR_ARCHIVE)		// Scale notify text at high r
 }
 
 constexpr int NOTIFYFADETIME = 6;
+int countedIdentical = 0;
 
 CUSTOM_CVAR(Int, con_notifylines, 4, CVAR_GLOBALCONFIG | CVAR_ARCHIVE)
 {
@@ -63,6 +68,10 @@ CUSTOM_CVAR(Int, con_notifylines, 4, CVAR_GLOBALCONFIG | CVAR_ARCHIVE)
 void FNotifyBuffer::Clear()
 {
 	FNotifyBufferBase::Clear();
+
+	countedIdentical = 0;
+	lastNotifyString    = "";
+
 	if (StatusBar == nullptr) return;
 	IFVIRTUALPTR(StatusBar, DBaseStatusBar, FlushNotify)
 	{
@@ -80,6 +89,42 @@ void FNotifyBuffer::AddString(int printlevel, FString source)
 		gamestate == GS_DEMOSCREEN ||
 		con_notifylines == 0)
 		return;
+
+	if (con_stackident && Text.Size() > 0 && source.Compare(lastNotifyString) == 0)
+	{
+		FNotifyText &last = Text.Last();
+
+		// Only stack if the previous message hasn't started fading out yet
+		if (last.Ticker < last.TimeOut)
+		{
+			countedIdentical++;
+
+			// Remove the previous entry and replace it with the combined one down below
+			Text.Pop();
+		}
+		else
+		{
+			// The old message was fading, start a fresh stack
+			lastNotifyString = source;
+			countedIdentical = 1;
+		}
+	}
+	else
+	{
+		// Always Brand new message
+		lastNotifyString = source;
+		countedIdentical = 1;
+	}
+
+	source.StripRight();
+    // insert the suffix directly as part ofthe message string 
+    if (countedIdentical > 1)
+    {
+		source += " (";
+		source.AppendFormat(GStrings.GetString("VALFORMAT_MULTIPLIER"), std::to_string(countedIdentical).c_str());
+		source += ")";
+	}
+	source += '\n';
 
 	// [MK] allow the status bar to take over notify printing
 	if (StatusBar != nullptr)
@@ -104,7 +149,7 @@ void FNotifyBuffer::Draw()
 	bool center = (con_centernotify != 0.f);
 	int line, lineadv, color, j;
 	bool canskip;
-	
+
 	FFont* font = generic_ui ? NewSmallFont : AlternativeSmallFont;
 
 	line = Top + font->GetDisplacement();
@@ -134,20 +179,18 @@ void FNotifyBuffer::Draw()
 				color = PrintColors[notify.PrintLevel];
 
 			int scale = active_con_scaletext(twod, generic_ui);
-			if (!center)
-				DrawText(twod, font, color, 0, line, notify.Text.GetChars(),
-					DTA_VirtualWidth, twod->GetWidth() / scale,
-					DTA_VirtualHeight, twod->GetHeight() / scale,
-					DTA_KeepRatio, true,
-					DTA_Alpha, alpha, TAG_DONE);
-			else
-				DrawText(twod, font, color, (twod->GetWidth() -
-					font->StringWidth (notify.Text) * scale) / 2 / scale,
-					line, notify.Text.GetChars(),
-					DTA_VirtualWidth, twod->GetWidth() / scale,
-					DTA_VirtualHeight, twod->GetHeight() / scale,
-					DTA_KeepRatio, true,
-					DTA_Alpha, alpha, TAG_DONE);
+			int textWidth = font->StringWidth(notify.Text);
+			int xPos = 0;
+
+            if (center)
+            {
+				xPos = (twod->GetWidth() / scale - textWidth) / 2;
+            }
+
+            // Draw the main text
+            DrawText(twod, font, color, xPos, line, notify.Text.GetChars(), DTA_VirtualWidth, twod->GetWidth() / scale,
+                     DTA_VirtualHeight, twod->GetHeight() / scale, DTA_KeepRatio, true, DTA_Alpha, alpha, TAG_DONE);
+
 			line += lineadv;
 			canskip = false;
 		}

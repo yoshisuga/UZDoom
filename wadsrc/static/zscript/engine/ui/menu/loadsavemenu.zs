@@ -48,7 +48,7 @@ struct SavegameManager native ui
 	native int ExtractSaveData(int index);
 	native void ClearSaveStuff();
 	native bool DrawSavePic(int x, int y, int w, int h);
-	deprecated("4.0") void DrawSaveComment(Font font, int cr, int x, int y, int scalefactor) 
+	deprecated("4.0") void DrawSaveComment(Font font, int cr, int x, int y, int scalefactor)
 	{
 		// Unfortunately, this was broken beyond repair so it now prints nothing.
 	}
@@ -98,7 +98,7 @@ class LoadSaveMenu : ListMenu
 
 	//=============================================================================
 	//
-	// 
+	//
 	//
 	//=============================================================================
 
@@ -219,7 +219,7 @@ class LoadSaveMenu : ListMenu
 			String text = Stringtable.Localize("$MNU_NOFILES");
 			int textlen = int(NewConsoleFont.StringWidth(text) * FontScale);
 
-			screen.DrawText (NewConsoleFont, Font.CR_GOLD, (listboxLeft+(listboxWidth-textlen)/2) / FontScale, (listboxTop+(listboxHeight-rowHeight)/2) / FontScale, text, 
+			screen.DrawText (NewConsoleFont, Font.CR_GOLD, (listboxLeft+(listboxWidth-textlen)/2) / FontScale, (listboxTop+(listboxHeight-rowHeight)/2) / FontScale, text,
 				DTA_VirtualWidthF, screen.GetWidth() / FontScale, DTA_VirtualHeightF, screen.GetHeight() / FontScale, DTA_KeepRatio, true);
 			return;
 		}
@@ -254,7 +254,7 @@ class LoadSaveMenu : ListMenu
 				didSeeSelected = true;
 				if (!mEntering)
 				{
-					screen.DrawText (NewConsoleFont, colr, (listboxLeft+1) / FontScale, (listboxTop+rowHeight*i + FontScale) / FontScale, node.SaveTitle, 
+					screen.DrawText (NewConsoleFont, colr, (listboxLeft+1) / FontScale, (listboxTop+rowHeight*i + FontScale) / FontScale, node.SaveTitle,
 						DTA_VirtualWidthF, screen.GetWidth() / FontScale, DTA_VirtualHeightF, screen.GetHeight() / FontScale, DTA_KeepRatio, true);
 				}
 				else
@@ -262,19 +262,19 @@ class LoadSaveMenu : ListMenu
 					String s = mInput.GetText() .. NewConsoleFont.GetCursor();
 					int length = int(NewConsoleFont.StringWidth(s) * FontScale);
 					int displacement = min(0, listboxWidth - 2 - length);
-					screen.DrawText (NewConsoleFont, Font.CR_WHITE, (listboxLeft + 1 + displacement) / FontScale, (listboxTop+rowHeight*i + FontScale) / FontScale, s, 
+					screen.DrawText (NewConsoleFont, Font.CR_WHITE, (listboxLeft + 1 + displacement) / FontScale, (listboxTop+rowHeight*i + FontScale) / FontScale, s,
 						DTA_VirtualWidthF, screen.GetWidth() / FontScale, DTA_VirtualHeightF, screen.GetHeight() / FontScale, DTA_KeepRatio, true);
 				}
 			}
 			else
 			{
-				screen.DrawText (NewConsoleFont, colr, (listboxLeft+1) / FontScale, (listboxTop+rowHeight*i + FontScale) / FontScale, node.SaveTitle, 
+				screen.DrawText (NewConsoleFont, colr, (listboxLeft+1) / FontScale, (listboxTop+rowHeight*i + FontScale) / FontScale, node.SaveTitle,
 					DTA_VirtualWidthF, screen.GetWidth() / FontScale, DTA_VirtualHeightF, screen.GetHeight() / FontScale, DTA_KeepRatio, true);
 			}
 			screen.ClearClipRect();
 			j++;
 		}
-	} 
+	}
 
 	void UpdateSaveComment()
 	{
@@ -292,7 +292,14 @@ class LoadSaveMenu : ListMenu
 		if (Selected != -1 && Selected < manager.SavegameCount())
 		{
 			String EndString;
-			EndString = String.Format("%s%s%s%s?\n\n%s", Stringtable.Localize("$MNU_DELETESG"), TEXTCOLOR_WHITE, manager.GetSavegame(Selected).SaveTitle, TEXTCOLOR_NORMAL, Stringtable.Localize("$PRESSYN"));
+			EndString = String.Format(
+				"%s\n%s%s%s?\n\n%s",
+				Stringtable.Localize("$MNU_DELETESG"),
+				TEXTCOLOR_WHITE,
+				manager.GetSavegame(Selected).SaveTitle,
+				TEXTCOLOR_NORMAL,
+				Stringtable.Localize("$PRESSYN")
+			);
 			StartMessage (EndString, 0);
 		}
 	}
@@ -405,7 +412,7 @@ class LoadSaveMenu : ListMenu
 
 	override bool MouseEvent(int type, int x, int y)
 	{
-		if (x >= listboxLeft && x < listboxLeft + listboxWidth && 
+		if (x >= listboxLeft && x < listboxLeft + listboxWidth &&
 			y >= listboxTop && y < listboxTop + listboxHeight)
 		{
 			int lineno = (y - listboxTop) / rowHeight;
@@ -526,7 +533,7 @@ class SaveMenu : LoadSaveMenu
 
 	override bool MenuEvent (int mkey, bool fromcontroller)
 	{
-		if (Super.MenuEvent(mkey, fromcontroller)) 
+		if (Super.MenuEvent(mkey, fromcontroller))
 		{
 			return true;
 		}
@@ -646,7 +653,7 @@ class LoadMenu : LoadSaveMenu
 
 	override bool MenuEvent (int mkey, bool fromcontroller)
 	{
-		if (Super.MenuEvent(mkey, fromcontroller)) 
+		if (Super.MenuEvent(mkey, fromcontroller))
 		{
 			return true;
 		}

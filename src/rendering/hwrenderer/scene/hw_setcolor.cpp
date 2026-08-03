@@ -48,13 +48,15 @@ void SetColor(FRenderState &state, FLevelLocals* Level, ELightMode lightmode, in
 
 //==========================================================================
 //
-// Lighting stuff 
+// Lighting stuff
 //
 //==========================================================================
 
+EXTERN_CVAR(Float, r_visibility)
+
 void SetShaderLight(FRenderState &state, FLevelLocals* Level, float level, float olight)
 {
-	const float MAXDIST = 256.f;
+	const float MAXDIST = (256.f) * (r_visibility / 8.0f);
 	const float THRESHOLD = 96.f;
 	const float FACTOR = 0.75f;
 
@@ -151,4 +153,3 @@ void SetFog(FRenderState &state, FLevelLocals* Level, ELightMode lightmode, int 
 		}
 	}
 }
-

@@ -43,8 +43,8 @@
 #include "i_mainwindow.h"
 
 extern "C" {
-    __declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
-    __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;	
+	__declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
+	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 
 EXTERN_CVAR(Int, vid_defwidth)
@@ -74,7 +74,7 @@ CUSTOM_CVAR(Int, vid_fsdwmhackalpha, 255, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 //==========================================================================
 //
-// 
+//
 //
 //==========================================================================
 
@@ -102,7 +102,7 @@ CUSTOM_CVAR(Int, vid_fsdwmhackalpha, 255, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 //==========================================================================
 //
-// 
+//
 //
 //==========================================================================
 
@@ -130,7 +130,7 @@ void SystemBaseFrameBuffer::KeepWindowOnScreen(int &winx, int &winy, int winw, i
 
 //==========================================================================
 //
-// 
+//
 //
 //==========================================================================
 
@@ -181,7 +181,7 @@ void SystemBaseFrameBuffer::SaveWindowedPos()
 
 //==========================================================================
 //
-// 
+//
 //
 //==========================================================================
 
@@ -216,7 +216,7 @@ void SystemBaseFrameBuffer::RestoreWindowedPos()
 
 //==========================================================================
 //
-// 
+//
 //
 //==========================================================================
 
@@ -274,7 +274,7 @@ void SystemBaseFrameBuffer::SetWindowSize(int w, int h)
 
 //==========================================================================
 //
-// 
+//
 //
 //==========================================================================
 
@@ -334,15 +334,14 @@ void SystemBaseFrameBuffer::PositionWindow(bool fullscreen, bool initialcall)
 
 	if (fullscreen)
 	{
-		if (!fsdwmhack)
+		SetWindowPos(mainwindow.GetHandle(), 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+		MoveWindow(mainwindow.GetHandle(), monRect.left, monRect.top, monRect.right-monRect.left, monRect.bottom-monRect.top, FALSE);
+		// And now, seriously, it IS in the right place. Promise.
+
+		if (fsdwmhack)
 		{
-			SetWindowPos(mainwindow.GetHandle(), 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-			MoveWindow(mainwindow.GetHandle(), monRect.left, monRect.top, monRect.right-monRect.left, monRect.bottom-monRect.top, FALSE);
-			// And now, seriously, it IS in the right place. Promise.
-		}
-		else
-		{
-			SetWindowPos(mainwindow.GetHandle(), HWND_TOP, 0, 0, int(monRect.right - monRect.left), int(monRect.bottom - monRect.top), 0);
+			// this is only a test to make sure the DWM compositor is still working. If this breaks, blame Microsoft.
+			// they break things literally every 2 years, sometimes less.
 			BYTE opacity = vid_fsdwmhackalpha;
 			SetLayeredWindowAttributes(mainwindow.GetHandle(), 0, opacity, LWA_ALPHA);
 		}
@@ -363,7 +362,7 @@ void SystemBaseFrameBuffer::PositionWindow(bool fullscreen, bool initialcall)
 
 //==========================================================================
 //
-// 
+//
 //
 //==========================================================================
 
@@ -380,7 +379,7 @@ SystemBaseFrameBuffer::SystemBaseFrameBuffer(void *hMonitor, bool fullscreen) : 
 
 //==========================================================================
 //
-// 
+//
 //
 //==========================================================================
 
@@ -399,7 +398,7 @@ SystemBaseFrameBuffer::~SystemBaseFrameBuffer()
 
 //==========================================================================
 //
-// 
+//
 //
 //==========================================================================
 
@@ -410,7 +409,7 @@ bool SystemBaseFrameBuffer::IsFullscreen()
 
 //==========================================================================
 //
-// 
+//
 //
 //==========================================================================
 
@@ -421,7 +420,7 @@ void SystemBaseFrameBuffer::ToggleFullscreen(bool yes)
 
 //==========================================================================
 //
-// 
+//
 //
 //==========================================================================
 

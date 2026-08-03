@@ -53,6 +53,12 @@ enum EObjectFlags
 	OF_Networked		= 1 << 14,		// Object has a unique network identifier that makes it synchronizable between all clients.
 	OF_ClientSide		= 1 << 15,		// Object is owned by a specific client rather than the server
 	OF_Travelling		= 1 << 16,		// Object is currently moving from one level to another
+	OF_NoRollback		= 1 << 17,		// Object should not be backed up while predicting.
+	OF_Predicted		= 1 << 18,		// Server object that's being allowed to exist as a dummy for prediction on the client's end.
+	OF_Predicting		= 1 << 19,		// Server object owned by the client is currently predicting.
+
+	// List of flags that can be shared between Objects.
+	OF_TransferrableFlags = OF_Transient | OF_ClientSide | OF_NoRollback,
 };
 
 template<class T> class TObjPtr;
@@ -285,7 +291,7 @@ public:
 	{
 		return pp;
 	}
-	
+
 
 	DObject** ForceGetRaw() const noexcept	//for situations where the read barrier needs to be skipped.
 	{
@@ -306,7 +312,7 @@ public:
 	{
 		return GC::ReadBarrier(pp);
 	}
-	
+
 	constexpr const T operator->() const noexcept
 	{
 		return GC::ReadBarrier(pp);

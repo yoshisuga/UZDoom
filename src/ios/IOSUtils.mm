@@ -22,6 +22,7 @@
 #include "d_eventbase.h"
 #include "ios-input-hook.h"
 #include "m_argv.h"
+#include "version.h"
 #include "keydef.h"
 #include "m_joy.h"
 //#if TARGET_OS_TV
@@ -284,6 +285,10 @@ const UInt8 DIK_TO_ASCII[128] =
 
 -(void)doMain {
   GameMain();
+}
+
++(NSString *)engineVersion {
+  return @VERSIONSTR;
 }
 
 

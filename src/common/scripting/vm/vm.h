@@ -26,15 +26,15 @@
 #define VM_H
 
 #include "autosegs.h"
-#include "zstring.h"
-#include "vectors.h"
-#include "quaternion.h"
+#include "basics.h"
 #include "cmdlib.h"
 #include "engineerrors.h"
 #include "memarena.h"
 #include "name.h"
+#include "quaternion.h"
 #include "scopebarrier.h"
-#include <type_traits>
+#include "vectors.h"
+#include "zstring.h"
 
 class DObject;
 union VMOP;
@@ -56,8 +56,6 @@ typedef unsigned short		VM_UHALF;
 typedef signed short		VM_SHALF;
 typedef unsigned int		VM_UWORD;
 typedef signed int			VM_SWORD;
-
-#define VM_EPSILON			(1/65536.0)
 
 // Register types for VMParam
 enum
@@ -727,7 +725,7 @@ typename VMReturnTypeTrait<RetVal>::type VMCallSingle(VMFunction* func, Args... 
 
 		VMValue params[argCount];
 
-		for(int i = 0, j = 0; i < sizeof...(Args); i++)
+		for(unsigned i = 0, j = 0; i < sizeof...(Args); i++)
 		{
 			for(int k = 0; k < arglist[i].count; k++, j++)
 			{
@@ -763,7 +761,7 @@ std::tuple<typename VMReturnTypeTrait<Rets>::type...> VMCallMultiImpl(VMFunction
 
 		VMValue params[argCount];
 
-		for(int i = 0, j = 0; i < sizeof...(Args); i++)
+		for(unsigned i = 0, j = 0; i < sizeof...(Args); i++)
 		{
 			for(int k = 0; k < arglist[i].count; k++, j++)
 			{
@@ -941,7 +939,7 @@ struct AFuncDesc : FAutoSegEntry<AFuncDesc>
 	: FAutoSegEntry(AutoSegs::ActionFunctons, this), ClassName(cn), FuncName(fn), Function(f), VMPointer(vm), DirectNative(dn) {}
 
 	AFuncDesc(const char * cn, const char * fn, actionf_p f, VMNativeFunction **vm) : AFuncDesc(cn, fn, f, vm, {}) {}
-	
+
 };
 
 // Macros to handle action functions. These are here so that I don't have to

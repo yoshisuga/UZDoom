@@ -29,21 +29,18 @@
 
 // HEADER FILES ------------------------------------------------------------
 
-#include "sc_man.h"
-#include "doomstat.h"
-#include "c_dispatch.h"
-#include "gi.h"
-#include "g_level.h"
-#include "p_lnspec.h"
-#include "p_tags.h"
-#include "filesystem.h"
-#include "textures.h"
-#include "g_levellocals.h"
 #include "actor.h"
-#include "p_setup.h"
-#include "maploader/maploader.h"
-#include "types.h"
 #include "doomdef.h"
+#include "doomstat.h"
+#include "filesystem.h"
+#include "g_levellocals.h"
+#include "gi.h"
+#include "maploader/maploader.h"
+#include "p_lnspec.h"
+#include "p_setup.h"
+#include "p_tags.h"
+#include "sc_man.h"
+#include "textures.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -164,11 +161,14 @@ static FCompatOption Options[] =
 	{ "explode2",				COMPATF2_EXPLODE2, SLOT_COMPAT2 },
 	{ "railing",				COMPATF2_RAILING, SLOT_COMPAT2 },
 	{ "scriptwait",				COMPATF2_SCRIPTWAIT, SLOT_COMPAT2 },
-	{ "nombf21",				COMPATF2_NOMBF21, SLOT_COMPAT2 },
+	{ "reservedlineflag",				COMPATF2_RESERVEDLINEFLAG, SLOT_COMPAT2 },
 	{ "voodoozombies",			COMPATF2_VOODOO_ZOMBIES, SLOT_COMPAT2 },
 	{ "fdteleport",				COMPATF2_FDTELEPORT, SLOT_COMPAT2 },
 	{ "noacsargcheck",			COMPATF2_NOACSARGCHECK, SLOT_COMPAT2 },
 	{ "novdolllockmsg",			COMPATF2_NOVDOLLLOCKMSG, SLOT_COMPAT2 },
+	{ "emulatemikoportals",		COMPATF2_EMULATEMIKOPORTALS, SLOT_COMPAT2 },
+	{ "transfersecret",			COMPATF2_TRANSFERSECRET, SLOT_COMPAT2},
+
 	{ NULL, 0, 0 }
 };
 
@@ -248,7 +248,7 @@ void ParseCompatibility()
 			md5array.Push(md5);
 			sc.MustGetString();
 		} while (!sc.Compare("{"));
-		
+
 		flags.Flags1 = 0;
 		flags.Flags2 = 0;
 		flags.BugCompatFlags = 0;
@@ -263,6 +263,7 @@ void ParseCompatibility()
 					case SLOT_COMPAT: flags.Flags1 |= ELevelCompatFlags::FromInt(Options[i].CompatFlags); break;
 					case SLOT_COMPAT2: flags.Flags2 |= ELevelCompatFlags2::FromInt(Options[i].CompatFlags); break;
 					case SLOT_BCOMPAT: flags.BugCompatFlags |= ELevelBugCompatFlags::FromInt(Options[i].CompatFlags); break;
+					case COMPATSLOT_COUNT: /* noop */ break;
 				}
 			}
 			else

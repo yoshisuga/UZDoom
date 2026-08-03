@@ -21,17 +21,15 @@
 **
 */
 
-#include "c_buttons.h"
-
-#include "c_dispatch.h"
-#include "printf.h"
-#include "cmdlib.h"
-#include "c_console.h"
-#include "m_joy.h"
+#include "basics.h"
 #include "c_bind.h"
+#include "c_buttons.h"
+#include "c_dispatch.h"
+#include "cmdlib.h"
+#include "m_joy.h"
+#include "printf.h"
 
 ButtonMap buttonMap;
-
 
 //=============================================================================
 //
@@ -90,7 +88,7 @@ int ButtonMap::ListActionCommands (const char *pattern)
 
 int ButtonMap::FindButtonIndex (const char *key, int funclen) const
 {
-    if (!key) return -1;
+	if (!key) return -1;
 
 	FName name = funclen == -1? FName(key, true) : FName(key, funclen, true);
 	if (name == NAME_None) return -1;
@@ -126,7 +124,7 @@ void ButtonMap::ResetButtonStates ()
 {
 	for (auto &btn : Buttons)
 	{
-		if (!btn.bReleaseLock) 
+		if (!btn.bReleaseLock)
 		{
 			btn.ReleaseKey (0);
 		}
@@ -145,7 +143,7 @@ void ButtonMap::GetAxes ()
 	float joyaxes[NUM_AXIS_CODES];
 	I_GetAxes(joyaxes);
 
-	for (int i = 0; i < Buttons.Size(); i++)
+	for (unsigned i = 0; i < Buttons.Size(); i++)
 	{
 		FButtonStatus &btn = Buttons[i];
 		FString &btn_name = NumToName[i];

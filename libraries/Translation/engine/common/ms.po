@@ -2,16 +2,15 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 1.0\n"
-"PO-Revision-Date: 2025-12-20 20:26+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Malay <https://hosted.weblate.org/projects/uzdoom/common/ms/>"
-"\n"
+"PO-Revision-Date: 2026-07-13 23:20-0400\n"
+"Last-Translator: Marcus Minhorst <marcus.minhorst@gmail.com>\n"
+"Language-Team: Malay <https://hosted.weblate.org/projects/uzdoom/common/ms/>\n"
 "Language: ms\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.15.1\n"
+"X-Generator: python 3.14.6 polib 1.2.0\n"
 
 msgid "PRESSYN"
 msgstr "Tekan Y atau N."
@@ -30,9 +29,6 @@ msgstr ""
 
 msgid "SAFEMESSAGE"
 msgstr "Anda pasti mahu melakukannya?"
-
-msgid "NOTSET"
-msgstr "Tidak ditetapkan"
 
 msgid "QSPROMPT"
 msgstr ""
@@ -148,16 +144,16 @@ msgid "OPTMNU_REVERB"
 msgstr ""
 
 msgid "CNTRLMNU_SWITCHTEXT1"
-msgstr ""
+msgstr "ENTER untuk ubah, BACKSPACE untuk bersihkan"
 
 msgid "CNTRLMNU_SWITCHTEXT2"
-msgstr ""
+msgstr "Tekan kekunci baharu untuk kawalan, ESC untuk batalkan"
 
 msgid "CNTRLMNU_CONTROLS"
-msgstr ""
+msgstr "Kawalan"
 
 msgid "CNTRLMNU_ATTACK"
-msgstr ""
+msgstr "Tembak"
 
 msgid "CNTRLMNU_ALTATTACK"
 msgstr ""
@@ -190,10 +186,10 @@ msgid "CNTRLMNU_TURN180"
 msgstr ""
 
 msgid "CNTRLMNU_JUMP"
-msgstr ""
+msgstr "Lompat"
 
 msgid "CNTRLMNU_CROUCH"
-msgstr ""
+msgstr "Selinap"
 
 msgid "CNTRLMNU_TOGGLECROUCH"
 msgstr ""
@@ -212,7 +208,7 @@ msgid "CNTRLMNU_CENTERVIEW"
 msgstr ""
 
 msgid "CNTRLMNU_RUN"
-msgstr ""
+msgstr "Lari"
 
 msgid "CNTRLMNU_TOGGLERUN"
 msgstr ""
@@ -224,22 +220,16 @@ msgid "CNTRLMNU_SCOREBOARD"
 msgstr ""
 
 msgid "CNTRLMNU_ACTION"
-msgstr ""
+msgstr "Tindakan"
 
 msgid "CNTRLMNU_ACTION_TITLE"
 msgstr ""
 
-msgid "CNTRLMNU_CHAT"
-msgstr ""
-
 msgid "MNU_MULTIPLAYER"
-msgstr ""
+msgstr "Multipemain"
 
 msgid "CNTRLMNU_SAY"
-msgstr ""
-
-msgid "CNTRLMNU_CHAT_TITLE"
-msgstr ""
+msgstr "Katakan"
 
 msgid "CNTRLMNU_WEAPONS_TITLE"
 msgstr ""
@@ -251,7 +241,7 @@ msgid "CNTRLMNU_OTHER_TITLE"
 msgstr ""
 
 msgid "CNTRLMNU_WEAPONS"
-msgstr ""
+msgstr "Senjata"
 
 msgid "CNTRLMNU_NEXTWEAPON"
 msgstr ""
@@ -264,7 +254,7 @@ msgid "CNTRLMNU_SLOT1"
 msgstr ""
 
 # only show appropriate slots per game
-#
+# 
 msgid "CNTRLMNU_SLOT2"
 msgstr ""
 
@@ -293,7 +283,7 @@ msgid "CNTRLMNU_SLOT0"
 msgstr ""
 
 msgid "CNTRLMNU_INVENTORY"
-msgstr ""
+msgstr "Inventori"
 
 msgid "CNTRLMNU_USEITEM"
 msgstr ""
@@ -354,13 +344,10 @@ msgid "CNTRLMNU_CHASECAM"
 msgstr ""
 
 msgid "CNTRLMNU_SCREENSHOT"
-msgstr ""
-
-msgid "CNTRLMNU_CONSOLE"
-msgstr ""
+msgstr "Tangkapan Layar"
 
 msgid "CNTRLMNU_PAUSE"
-msgstr ""
+msgstr "Jeda"
 
 msgid "CNTRLMNU_DISPLAY_INC"
 msgstr ""
@@ -398,9 +385,6 @@ msgstr ""
 msgid "CNTRLMNU_MENU_QUIT"
 msgstr ""
 
-msgid "CNTRLMNU_ADJUST_GAMMA"
-msgstr ""
-
 msgid "MOUSEMNU_ENABLEMOUSE"
 msgstr ""
 
@@ -411,7 +395,7 @@ msgid "MOUSEMNU_SHOWBACKBUTTON"
 msgstr ""
 
 msgid "MOUSEMNU_CURSOR"
-msgstr ""
+msgstr "Kursor"
 
 msgid "MOUSEMNU_SENSITIVITY_X"
 msgstr ""
@@ -456,7 +440,7 @@ msgid "OPTVAL_LOWERRIGHT"
 msgstr ""
 
 msgid "OPTVAL_TOUCHSCREENLIKE"
-msgstr ""
+msgstr "Seperti Skrin Sentuh"
 
 msgid "OPTSTR_SIMPLEARROW"
 msgstr ""
@@ -465,7 +449,7 @@ msgid "OPTSTR_SYSTEMCURSOR"
 msgstr ""
 
 msgid "OPTVAL_DEFAULT"
-msgstr ""
+msgstr "Lalai"
 
 msgid "JOYMNU_TITLE"
 msgstr ""
@@ -474,7 +458,7 @@ msgid "JOYMNU_OPTIONS"
 msgstr ""
 
 msgid "JOYMNU_NOMENU"
-msgstr ""
+msgstr "Sekat input pengawal dalam menu"
 
 msgid "JOYMNU_ENABLE"
 msgstr ""
@@ -486,7 +470,7 @@ msgid "JOYMNU_XINPUT"
 msgstr ""
 
 msgid "JOYMNU_PS2"
-msgstr ""
+msgstr "Dayakan penyesuai PlayStation 2 mentah"
 
 msgid "JOYMNU_NOCON"
 msgstr ""
@@ -511,7 +495,7 @@ msgid "JOYMNU_AXIS"
 msgstr ""
 
 msgid "JOYMNU_INVERT"
-msgstr ""
+msgstr "Songsang"
 
 msgid "JOYMNU_DEADZONE"
 msgstr ""
@@ -520,7 +504,7 @@ msgid "JOYMNU_NOAXES"
 msgstr ""
 
 msgid "OPTVAL_NONE"
-msgstr ""
+msgstr "Tiada"
 
 msgid "OPTVAL_TURNING"
 msgstr ""
@@ -538,22 +522,22 @@ msgid "OPTVAL_MOVINGUPDOWN"
 msgstr ""
 
 msgid "OPTVAL_INVERTED"
-msgstr ""
+msgstr "Disongsang"
 
 msgid "OPTVAL_NOTINVERTED"
 msgstr ""
 
 msgid "TXT_COLOR_BLUE"
-msgstr ""
+msgstr "Biru"
 
 msgid "TXT_COLOR_RED"
-msgstr ""
+msgstr "Merah"
 
 msgid "TXT_COLOR_GREEN"
-msgstr ""
+msgstr "Hijau"
 
 msgid "TXT_COLOR_GRAY"
-msgstr ""
+msgstr "Kelabu"
 
 msgid "TXT_COLOR_DARKGRAY"
 msgstr ""
@@ -562,7 +546,7 @@ msgid "TXT_COLOR_DARKGREEN"
 msgstr ""
 
 msgid "TXT_COLOR_BROWN"
-msgstr ""
+msgstr "Perang"
 
 msgid "TXT_COLOR_DARKBLUE"
 msgstr ""
@@ -571,18 +555,15 @@ msgid "TXT_COLOR_LIGHTRED"
 msgstr ""
 
 msgid "TXT_COLOR_YELLOW"
-msgstr ""
+msgstr "Kuning"
 
 msgid "TXT_COLOR_PURPLE"
-msgstr ""
+msgstr "Ungu"
 
 msgid "TXT_COLOR_DULLGREEN"
-msgstr ""
+msgstr "Zaitun"
 
 msgid "TXT_COLOR_BEIGE"
-msgstr ""
-
-msgid "TXT_COLOR_LIGHTGREEN"
 msgstr ""
 
 msgid "TXT_COLOR_LIGHTBLUE"
@@ -595,46 +576,46 @@ msgid "TXT_COLOR_LIGHTBROWN"
 msgstr ""
 
 msgid "TXT_COLOR_GOLD"
-msgstr ""
+msgstr "Emas"
 
 msgid "TXT_COLOR_BRIGHTGREEN"
 msgstr ""
 
 msgid "TXT_COLOR_RUST"
-msgstr ""
+msgstr "Karat"
 
 msgid "PLYRMNU_NAME"
 msgstr "Nama"
 
 msgid "PLYRMNU_TEAM"
-msgstr ""
+msgstr "Pasukan"
 
 msgid "PLYRMNU_PLAYERCOLOR"
 msgstr "Warna"
 
 msgid "PLYRMNU_PLAYERGENDER"
-msgstr ""
+msgstr "Jantina"
 
 msgid "OPTVAL_MALE"
-msgstr ""
+msgstr "Lelaki"
 
 msgid "OPTVAL_FEMALE"
-msgstr ""
+msgstr "Perempuan"
 
 msgid "OPTVAL_NEUTRAL"
-msgstr ""
+msgstr "Neutral"
 
 msgid "OPTVAL_OTHER"
-msgstr ""
+msgstr "Objek"
 
 msgid "GMPLYMNU_TITLE"
 msgstr "Tetapan Tatamain"
 
 msgid "OPTVAL_ALWAYS"
-msgstr ""
+msgstr "Sentiasa"
 
 msgid "OPTVAL_NEVER"
-msgstr ""
+msgstr "Jangan Pernah"
 
 msgid "PLYRMNU_AUTOAIM"
 msgstr ""
@@ -649,24 +630,12 @@ msgid "DSPLYMNU_VSYNC"
 msgstr ""
 
 msgid "DSPLYMNU_MODELS"
-msgstr ""
-
-msgid "DSPLYMNU_CROSSHAIRSCALE"
-msgstr ""
-
-msgid "DSPLYMNU_SBSCALE"
-msgstr ""
-
-msgid "DSPLYMNU_MESSAGES"
-msgstr ""
+msgstr "Model"
 
 msgid "MSGMNU_CENTERMESSAGES"
 msgstr ""
 
 msgid "MSGMNU_PULSEMESSAGES"
-msgstr ""
-
-msgid "MSGMNU_MESSAGESCALE"
 msgstr ""
 
 msgid "MNU_COLORPICKER"
@@ -688,15 +657,6 @@ msgid "MAPCOLORMNU_TITLE"
 msgstr ""
 
 msgid "MAPCOLORMNU_DEFAULTMAPCOLORS"
-msgstr ""
-
-msgid "SNDMNU_SNDENABLED"
-msgstr ""
-
-msgid "SNDMNU_MUSENABLED"
-msgstr ""
-
-msgid "OPTVAL_4000HZ"
 msgstr ""
 
 msgid "OPTVAL_8000HZ"
@@ -739,13 +699,13 @@ msgid "OPTVAL_4096SAMPLES"
 msgstr ""
 
 msgid "OPTSTR_AUTO"
-msgstr ""
+msgstr "Automatik"
 
 msgid "OPTSTR_MONO"
-msgstr ""
+msgstr "Mono"
 
 msgid "OPTSTR_STEREO"
-msgstr ""
+msgstr "Stereo"
 
 msgid "OPTSTR_PROLOGIC"
 msgstr ""
@@ -769,7 +729,7 @@ msgid "OPENALMNU_ENABLEEFX"
 msgstr ""
 
 msgid "OPENALMNU_RESAMPLER"
-msgstr ""
+msgstr "Pensampel Semula"
 
 msgid "SNDMNU_SFXVOLUME"
 msgstr ""
@@ -795,9 +755,6 @@ msgstr ""
 msgid "SNDMNU_CHANNELS"
 msgstr ""
 
-msgid "SNDMNU_BACKEND"
-msgstr ""
-
 msgid "SNDMNU_OPENAL"
 msgstr "Tetapan OpenAL"
 
@@ -813,9 +770,6 @@ msgstr ""
 msgid "SNDMNU_MIDIPLAYER"
 msgstr ""
 
-msgid "SNDMNU_MENUSOUND"
-msgstr ""
-
 msgid "ADVSNDMNU_TITLE"
 msgstr "Tetapan Suara Lanjutan"
 
@@ -823,13 +777,13 @@ msgid "ADVSNDMNU_SAMPLERATE"
 msgstr ""
 
 msgid "ADVSNDMNU_HRTF"
-msgstr ""
+msgstr "HRTF"
 
 msgid "ADVSNDMNU_OPLSYNTHESIS"
 msgstr ""
 
 msgid "ADVSNDMNU_OPLNUMCHIPS"
-msgstr ""
+msgstr "Bilangan cip OPL yang diemulasi"
 
 msgid "ADVSNDMNU_OPLGAIN"
 msgstr ""
@@ -844,18 +798,15 @@ msgid "ADVSNDMNU_MIDIVOICES"
 msgstr ""
 
 msgid "ADVSNDMNU_FLUIDSYNTH"
-msgstr ""
+msgstr "FluidSynth"
 
 msgid "ADVSNDMNU_GLOBAL"
-msgstr ""
+msgstr "Global"
 
 msgid "ADVSNDMNU_FREEVERB"
-msgstr ""
+msgstr "Freeverb"
 
 msgid "ADVSNDMNU_GLOBAL_FREEVERB"
-msgstr ""
-
-msgid "ADVSNDMNU_FLUIDPATCHSET"
 msgstr ""
 
 msgid "ADVSNDMNU_FLUIDGAIN"
@@ -871,25 +822,16 @@ msgid "ADVSNDMNU_CHORUS"
 msgstr ""
 
 msgid "ADVSNDMNU_TIMIDITY"
-msgstr ""
+msgstr "Timidity++"
 
 msgid "ADVSNDMNU_ADLMIDI"
-msgstr ""
+msgstr "ADLMidi"
 
 msgid "ADVSNDMNU_OPNMIDI"
-msgstr ""
-
-msgid "ADVSNDMNU_TIMIDITYCONFIG"
-msgstr ""
-
-msgid "ADVSNDMNU_TIMIDITYVOLUME"
-msgstr ""
+msgstr "OPNMidi"
 
 msgid "ADVSNDMNU_WILDMIDI"
-msgstr ""
-
-msgid "ADVSNDMNU_WILDMIDICONFIG"
-msgstr ""
+msgstr "WildMidi"
 
 msgid "ADVSNDMNU_SELCONFIG"
 msgstr ""
@@ -900,14 +842,11 @@ msgstr ""
 msgid "ADVSNDMNU_OPLBANK"
 msgstr ""
 
-msgid "ADVSNDMNU_ADLOPLCORES"
-msgstr ""
-
 msgid "ADVSNDMNU_RUNPCMRATE"
-msgstr ""
+msgstr "Jalankan emulasi pada kadar PCM"
 
 msgid "ADVSNDMNU_ADLNUMCHIPS"
-msgstr ""
+msgstr "Bilangan cip OPL yang diemulasi"
 
 msgid "ADVSNDMNU_ADLGAIN"
 msgstr ""
@@ -927,9 +866,6 @@ msgstr ""
 msgid "ADVSNDMNU_GUSEMULATION"
 msgstr ""
 
-msgid "ADVSNDMNU_GUSCONFIG"
-msgstr ""
-
 msgid "ADVSNDMNU_DMXGUS"
 msgstr ""
 
@@ -937,7 +873,7 @@ msgid "ADVSNDMNU_GUSMEMSIZE"
 msgstr ""
 
 msgid "ADVSNDMNU_OPNNUMCHIPS"
-msgstr ""
+msgstr "Bilangan cip OPN yang diemulasi"
 
 msgid "ADVSNDMNU_OPNGAIN"
 msgstr ""
@@ -946,7 +882,7 @@ msgid "ADVSNDMNU_ADLCUSTOMBANK"
 msgstr ""
 
 msgid "ADVSNDMNU_ADLUSEWADBANK"
-msgstr ""
+msgstr "Gunakan bank GENMIDI dalam WAD sebagai bank tersuai"
 
 msgid "ADVSNDMNU_OPLBANKFILE"
 msgstr ""
@@ -963,16 +899,16 @@ msgstr ""
 # This setting is duplicated threefold in order to allow for different
 # grammatical gender endings
 msgid "OPTVAL_LINEAR_1"
-msgstr ""
+msgstr "Linear"
 
 msgid "OPTVAL_LINEAR_2"
-msgstr ""
+msgstr "Linear"
 
 msgid "OPTVAL_LINEAR_3"
-msgstr ""
+msgstr "Linear"
 
 msgid "OPTVAL_NEAREST"
-msgstr ""
+msgstr "Terdekat"
 
 msgid "OPTVAL_PCF_LOW"
 msgstr ""
@@ -1011,19 +947,19 @@ msgid "MODMNU_MASTERVOLUME"
 msgstr ""
 
 msgid "MODMNU_QUALITY"
-msgstr ""
+msgstr "Kualiti"
 
 msgid "MODMNU_VOLUMERAMPING"
 msgstr ""
 
 msgid "OPTVAL_LIBXMP"
-msgstr ""
+msgstr "libXMP"
 
 msgid "OPTVAL_DUMB"
-msgstr ""
+msgstr "Dumb"
 
 msgid "MODMNU_CHIPOMATIC"
-msgstr ""
+msgstr "Chip-o-matic"
 
 msgid "OPTVAL_MAMEOPL2"
 msgstr ""
@@ -1056,12 +992,9 @@ msgid "OPTVAL_MAMEOPN2"
 msgstr ""
 
 msgid "OPTVAL_NP2OPNA"
-msgstr ""
+msgstr "Neko Project II Kai OPNA"
 
 msgid "OPTVAL_MAMEOPNA"
-msgstr ""
-
-msgid "OPTVAL_PMDWINOPNA"
 msgstr ""
 
 msgid "OPTVAL_OPALOPL3"
@@ -1113,16 +1046,16 @@ msgid "OPNVLMODEL_NATIVE"
 msgstr ""
 
 msgid "ADLVLMODEL_DMX"
-msgstr ""
+msgstr "DMX (Tepat, dengan pepijat AM)"
 
 msgid "OPNVLMODEL_DMX"
 msgstr ""
 
 msgid "ADLVLMODEL_APOGEE"
-msgstr ""
+msgstr "Apogee (Tepat, dengan pepijat AM)"
 
 msgid "OPNVLMODEL_APOGEE"
-msgstr ""
+msgstr "Seperti dalam Apogee Sound System"
 
 msgid "OPNVLMODEL_WIN9X"
 msgstr ""
@@ -1134,10 +1067,10 @@ msgid "ADLVLMODEL_WIN9XGENERIC"
 msgstr ""
 
 msgid "ADLVLMODEL_DMX_FIXED"
-msgstr ""
+msgstr "DMX (Tanpa pepijat suara AM)"
 
 msgid "ADLVLMODEL_APOGEE_FIXED"
-msgstr ""
+msgstr "Apogee (Tanpa pepijat suara AM)"
 
 msgid "ADLVLMODEL_AIL"
 msgstr ""
@@ -1146,7 +1079,7 @@ msgid "ADLVLMODEL_HMI"
 msgstr ""
 
 msgid "ADLVLMODEL_HMIOLD"
-msgstr ""
+msgstr "HMI SOS (Tua, mempunyai pepijat)"
 
 msgid "ADLCHANALLOC_AUTO"
 msgstr ""
@@ -1176,13 +1109,13 @@ msgid "OPTVAL_1024K"
 msgstr ""
 
 msgid "OPTVAL_UNCHARTED2"
-msgstr ""
+msgstr "Uncharted 2"
 
 msgid "OPTVAL_HEJLDAWSON"
-msgstr ""
+msgstr "Hejl-Dawson"
 
 msgid "OPTVAL_REINHARD"
-msgstr ""
+msgstr "Reinhard"
 
 msgid "OPTVAL_PALETTE"
 msgstr ""
@@ -1304,12 +1237,6 @@ msgstr ""
 msgid "GLTEXMNU_TITLE"
 msgstr "Tetapan Tekstur"
 
-msgid "GLTEXMNU_TEXENABLED"
-msgstr ""
-
-msgid "GLTEXMNU_ENABLEHIRES"
-msgstr ""
-
 msgid "GLTEXMNU_HQRESIZE"
 msgstr ""
 
@@ -1317,7 +1244,7 @@ msgid "GLTEXMNU_HQRESIZEMULT"
 msgstr ""
 
 msgid "GLTEXMNU_HQRESIZEWARN"
-msgstr ""
+msgstr "Mod ini memerlukan %d kali lebih banyak ingatan video"
 
 msgid "GLTEXMNU_RESIZETEX"
 msgstr ""
@@ -1337,12 +1264,6 @@ msgstr ""
 msgid "VIDMNU_TITLE"
 msgstr ""
 
-msgid "OPTVAL_SCALENEAREST"
-msgstr ""
-
-msgid "OPTVAL_SCALELINEAR"
-msgstr ""
-
 msgid "OPTVAL_LETTERBOX"
 msgstr ""
 
@@ -1358,16 +1279,10 @@ msgstr ""
 msgid "VIDMNU_HIDPI"
 msgstr ""
 
-msgid "VIDMNU_ASPECTRATIO"
-msgstr ""
-
 msgid "VIDMNU_FORCEASPECT"
 msgstr ""
 
 msgid "VIDMNU_CROPASPECT"
-msgstr ""
-
-msgid "VIDMNU_5X4ASPECTRATIO"
 msgstr ""
 
 msgid "VIDMNU_SCALEMODE"
@@ -1454,14 +1369,14 @@ msgid "VIDMNU_PREFERBACKEND"
 msgstr ""
 
 msgid "OPTVAL_OPENGL"
-msgstr ""
+msgstr "OpenGL"
 
 msgid "OPTVAL_VULKAN"
-msgstr ""
+msgstr "Vulkan"
 
 # Rendering backend
 msgid "OPTVAL_OPENGLES"
-msgstr ""
+msgstr "OpenGL ES"
 
 msgid "MISCMNU_MERGEKEYS"
 msgstr ""
@@ -1502,9 +1417,6 @@ msgstr ""
 msgid "HUDMNU_CROSSHAIRCOLOR"
 msgstr ""
 
-msgid "HUDMNU_CROSSHAIRHEALTH"
-msgstr ""
-
 msgid "HUDMNU_CROSSHAIRSCALE"
 msgstr ""
 
@@ -1531,95 +1443,6 @@ msgid "REVMNU_EDIT"
 msgstr ""
 
 msgid "REVMNU_NEW"
-msgstr ""
-
-msgid "REVMNU_REVERT"
-msgstr ""
-
-# Please translate only if you know how to properly name this technical
-# jargon!
-msgid "REVMNU_ENVIRONMENT_SIZE"
-msgstr ""
-
-msgid "REVMNU_ENVIRONMENT_DIFFUSION"
-msgstr ""
-
-msgid "REVMNU_ROOM"
-msgstr ""
-
-msgid "REVMNU_ROOM_HF"
-msgstr ""
-
-msgid "REVMNU_ROOM_LF"
-msgstr ""
-
-msgid "REVMNU_DECAY_TIME"
-msgstr ""
-
-msgid "REVMNU_DECAY_HF_RATIO"
-msgstr ""
-
-msgid "REVMNU_DECAY_LF_RATIO"
-msgstr ""
-
-msgid "REVMNU_REFLECTIONS"
-msgstr ""
-
-msgid "REVMNU_REFLECTIONS_DELAY"
-msgstr ""
-
-msgid "REVMNU_REFLECTIONS_PAN_X"
-msgstr ""
-
-msgid "REVMNU_REFLECTIONS_PAN_Y"
-msgstr ""
-
-msgid "REVMNU_REFLECTIONS_PAN_Z"
-msgstr ""
-
-msgid "REVMNU_REVERB"
-msgstr ""
-
-msgid "REVMNU_REVERB_DELAY"
-msgstr ""
-
-msgid "REVMNU_REVERB_PAN_X"
-msgstr ""
-
-msgid "REVMNU_REVERB_PAN_Y"
-msgstr ""
-
-msgid "REVMNU_REVERB_PAN_Z"
-msgstr ""
-
-msgid "REVMNU_ECHO_TIME"
-msgstr ""
-
-msgid "REVMNU_ECHO_DEPTH"
-msgstr ""
-
-msgid "REVMNU_MODULATION_TIME"
-msgstr ""
-
-msgid "REVMNU_MODULATION_DEPTH"
-msgstr ""
-
-msgid "REVMNU_AIR_ABSORPTION_HF"
-msgstr ""
-
-msgid "REVMNU_HF_REFERENCE"
-msgstr ""
-
-msgid "REVMNU_LF_REFERENCE"
-msgstr ""
-
-msgid "REVMNU_ROOM_ROLLOFF_FACTOR"
-msgstr ""
-
-msgid "REVMNU_DIFFUSION"
-msgstr ""
-
-msgid "REVMNU_DENSITY"
 msgstr ""
 
 msgid "REVMNU_Reflections_Scale"
@@ -1676,9 +1499,6 @@ msgstr "Tetapan Vulkan (Eksperimental)"
 msgid "VK_TITLE"
 msgstr "Tetapan Vulkan"
 
-msgid "VKMNU_ENABLE"
-msgstr ""
-
 msgid "VKMNU_DEVICE"
 msgstr ""
 
@@ -1686,29 +1506,25 @@ msgid "VKMNU_HDR"
 msgstr ""
 
 msgid "VK_WARNING"
-msgstr ""
+msgstr "Amaran: Pemapar Vulkan masih dalam tahap uji cuba!"
 
 msgid "VK_RESTART"
 msgstr "Permainan perlu dimulakan semula agar tetapan itu berfungsi."
 
-# This is not yet implemented - but it is planned
-msgid "VKMNU_DEVICESELECT"
-msgstr ""
-
 msgid "OPTVAL_SCALENX"
-msgstr ""
+msgstr "ScaleNx"
 
 msgid "OPTVAL_NORMALNX"
-msgstr ""
+msgstr "NormalNx"
 
 msgid "OPTVAL_HQNX"
-msgstr ""
+msgstr "hqNx"
 
 msgid "OPTVAL_HQNXMMX"
 msgstr ""
 
 msgid "OPTVAL_NXBRZ"
-msgstr ""
+msgstr "xBRZ"
 
 msgid "OPTVAL_OLD_NXBRZ"
 msgstr ""
@@ -1726,128 +1542,6 @@ msgid "OS_NO_RESULTS"
 msgstr ""
 
 msgid "OS_LABEL"
-msgstr ""
-
-msgid "TXT_OBITUARY1"
-msgstr ""
-
-msgid "TXT_OBITUARY2"
-msgstr ""
-
-msgid "TXT_OBITUARY3"
-msgstr ""
-
-msgid "TXT_OBITUARY4"
-msgstr ""
-
-msgid "TXT_OBITUARY5"
-msgstr ""
-
-msgid "TXT_OBITUARY6"
-msgstr ""
-
-msgid "TXT_OBITUARY7"
-msgstr ""
-
-msgid "TXT_OBITUARY8"
-msgstr ""
-
-msgid "TXT_OBITUARY9"
-msgstr ""
-
-msgid "TXT_OBITUARY10"
-msgstr ""
-
-msgid "TXT_OBITUARY11"
-msgstr ""
-
-msgid "TXT_OBITUARY12"
-msgstr ""
-
-msgid "TXT_OBITUARY13"
-msgstr ""
-
-msgid "TXT_OBITUARY14"
-msgstr ""
-
-msgid "TXT_OBITUARY15"
-msgstr ""
-
-msgid "TXT_OBITUARY16"
-msgstr ""
-
-msgid "TXT_OBITUARY17"
-msgstr ""
-
-msgid "TXT_OBITUARY18"
-msgstr ""
-
-msgid "TXT_OBITUARY19"
-msgstr ""
-
-msgid "TXT_OBITUARY20"
-msgstr ""
-
-msgid "TXT_OBITUARY21"
-msgstr ""
-
-msgid "TXT_OBITUARY22"
-msgstr ""
-
-msgid "TXT_OBITUARY23"
-msgstr ""
-
-msgid "TXT_OBITUARY24"
-msgstr ""
-
-msgid "TXT_OBITUARY25"
-msgstr ""
-
-msgid "TXT_OBITUARY26"
-msgstr ""
-
-msgid "TXT_OBITUARY27"
-msgstr ""
-
-msgid "TXT_OBITUARY28"
-msgstr ""
-
-msgid "TXT_OBITUARY29"
-msgstr ""
-
-msgid "TXT_OBITUARY30"
-msgstr ""
-
-msgid "TXT_OBITUARY31"
-msgstr ""
-
-msgid "TXT_SELFOBIT1"
-msgstr ""
-
-msgid "TXT_SELFOBIT2"
-msgstr ""
-
-msgid "TXT_SELFOBIT3"
-msgstr ""
-
-msgid "TXT_SELFOBIT4"
-msgstr ""
-
-msgid "TXT_SELFOBIT5"
-msgstr ""
-
-msgid "TXT_SELFOBIT6"
-msgstr ""
-
-# This is not a text to be translated but an engine switch for complex
-# languages.
-msgid "USE_GENERIC_FONT"
-msgstr ""
-
-# This should list all uppercase characters that are REQUIRED for proper
-# language display. If it is acceptable that accents get omitted a character
-# should NOT be listed here!
-msgid "REQUIRED_CHARACTERS"
 msgstr ""
 
 msgid "OPTMNU_FULLOPTIONS"
@@ -1874,44 +1568,14 @@ msgstr ""
 msgid "TXT_UNKNOWN"
 msgstr ""
 
-msgid "OPTVAL_HUD"
-msgstr ""
-
-msgid "OPTVAL_AUTOMAP"
-msgstr ""
-
-msgid "OPTVAL_HUDANDMAP"
-msgstr ""
-
 msgid "TXT_SAVEGAMENEEDS"
 msgstr ""
-
-msgid "OPTMNU_MULTIPLAYER"
-msgstr "Tetapan Multipemain"
-
-msgid "OPTMNU_INPUT"
-msgstr "Tetapan Input"
-
-msgid "OPTMNU_SYSTEM"
-msgstr "Tetapan Sistem"
-
-msgid "OPTMNU_LIGHT"
-msgstr "Tetapan Cahaya"
-
-msgid "OPTMNU_SPRITE"
-msgstr "Tetapan Sprite"
 
 msgid "GLPREFMNU_CORONAS"
 msgstr ""
 
-msgid "DSPLYMNU_APPEARANCE"
-msgstr ""
-
-msgid "DSPLYMNU_ADVANCED"
-msgstr "Tetapan Paparan Lanjutan"
-
 msgid "PICKER_SELECT"
-msgstr ""
+msgstr "Pilih fail permainan yang ingin dijalankan."
 
 msgid "PICKER_PLAY"
 msgstr ""
@@ -1923,9 +1587,6 @@ msgid "PICKER_GENERAL"
 msgstr ""
 
 msgid "PICKER_EXTRA"
-msgstr ""
-
-msgid "PICKER_FULLSCREEN"
 msgstr ""
 
 msgid "PICKER_NOAUTOLOAD"
@@ -2014,21 +1675,6 @@ msgstr ""
 msgid "PICKER_JOIN"
 msgstr ""
 
-msgid "PICKER_NETMODE"
-msgstr ""
-
-msgid "PICKER_NETAUTO"
-msgstr ""
-
-# Connections are routed through the host instead of all players connecting to
-# each other individually.
-msgid "PICKER_NETSERVER"
-msgstr ""
-
-# Players connect to each other individually.
-msgid "PICKER_NETPEER"
-msgstr ""
-
 msgid "PICKER_NETRATE"
 msgstr ""
 
@@ -2097,9 +1743,6 @@ msgid "JOYMNU_ANALOGSTRAFERUN"
 msgstr ""
 
 msgid "NOTES_FAIL"
-msgstr ""
-
-msgid "NOTES_VERSION"
 msgstr ""
 
 msgid "NOTES_UNKNOWN"
